@@ -1,6 +1,12 @@
-from dict import DictInfo
-from shared import Signature, StandardObject, List, Vector3, OrientationMatrix
 from struct import Struct
+
+from dict import DictInfo
+from shared import Signature, StandardObject, List, Vector3, OrientationMatrix, Reference
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from cmdl import CMDL
+
 
 class SOBJMesh(StandardObject):
     struct = Struct('i4siiiiiii?BH' + 'x' * 4 * 18 + 'i')
@@ -11,19 +17,20 @@ class SOBJMesh(StandardObject):
     user_data: DictInfo
     shape_index = 0
     material_index = 0
-    owner_model = 0
+    owner: "CMDL"
     is_visible = True
     priority = 0
     mesh_node_visibility_index = 0
     mesh_node_name: str
-    def __init__(self) -> None:
+    def __init__(self, owner) -> None:
         super().__init__()
         self.user_data = DictInfo()
         self.name = 'mesh'
         self.mesh_node_name = 'asdf'
+        self.owner = owner
     def values(self) -> tuple:
         return (self.type, self.signature, self.revision, self.name, self.user_data,
-            self.shape_index, self.material_index, self.owner_model, self.is_visible,
+            self.shape_index, self.material_index, Reference(self.owner), self.is_visible,
             self.priority, self.mesh_node_visibility_index, self.mesh_node_name)
 
 class OrientedBoundingBox(StandardObject):

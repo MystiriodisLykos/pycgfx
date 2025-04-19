@@ -50,7 +50,7 @@ class StringTable:
     
     def write(self) -> bytes:
         return b''.join(self.table.keys()) + b'\0' * self.padding
-            
+
 
 class BaseObject(ABC):
     struct: struct.Struct
@@ -82,6 +82,8 @@ class BaseObject(ABC):
                 values.append(v.offset - offset)
             elif isinstance(v, InlineObject):
                 values += list(v.real_values(strings, imag))
+            elif isinstance(v, Reference):
+                values.append(v.obj.offset - offset)
             elif isinstance(v, Signature):
                 values.append(v.data.encode())
             elif isinstance(v, str):
@@ -151,6 +153,11 @@ class StandardObject(BaseObject):
 
 class InlineObject(BaseObject):
     pass
+
+
+class Reference:
+    def __init__(self, obj: StandardObject):
+        self.obj = obj
 
 class ListData(StandardObject, Generic[T]):
     contents: list[T]

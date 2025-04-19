@@ -31,7 +31,7 @@ class CMDL(StandardObject):
         super().__init__()
         self.user_data = DictInfo()
         self.animation_group_descriptions = DictInfo()
-        self.meshes = List([SOBJMesh()])
+        self.meshes = List([SOBJMesh(self)])
         self.materials = DictInfo()
         self.shapes = List([SOBJShape()])
         self.mesh_nodes = DictInfo()
