@@ -1,5 +1,6 @@
 from dict import DictInfo
 from shared import Signature, StandardObject, Vector3, Matrix, List
+from sobj import SOBJMesh, SOBJShape
 from struct import Struct
 
 
@@ -19,9 +20,9 @@ class CMDL(StandardObject):
     translation = Vector3(0, 0, 0)
     local = Matrix(Vector3(1, 0, 0), Vector3(0, 1, 0), Vector3(0, 0, 1), Vector3(0, 0, 0))
     world = Matrix(Vector3(1, 0, 0), Vector3(0, 1, 0), Vector3(0, 0, 1), Vector3(0, 0, 0))
-    meshes: List
+    meshes: List[SOBJMesh]
     materials: DictInfo
-    shapes: List
+    shapes: List[SOBJShape]
     mesh_nodes: DictInfo
     flags2 = 0
     cull_mode = 0
@@ -30,9 +31,9 @@ class CMDL(StandardObject):
         super().__init__()
         self.user_data = DictInfo()
         self.animation_group_descriptions = DictInfo()
-        self.meshes = List()
+        self.meshes = List([SOBJMesh()])
         self.materials = DictInfo()
-        self.shapes = List()
+        self.shapes = List([SOBJShape()])
         self.mesh_nodes = DictInfo()
         self.name = ""
     def values(self) -> tuple:

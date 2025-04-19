@@ -191,3 +191,11 @@ class Matrix(InlineObject):
         self.columns = [col1, col2, col3, col4]
     def values(self) -> tuple:
         return tuple(self.columns)
+
+class OrientationMatrix(InlineObject):
+    struct = struct.Struct('f'*9)
+    columns: list[Vector3]
+    def __init__(self, col1, col2, col3):
+        self.columns = [col1, col2, col3]
+    def values(self) -> tuple:
+        return tuple(self.columns)
