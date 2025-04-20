@@ -91,7 +91,8 @@ class BaseObject(ABC):
                 values.append(strings.get(v) - offset if v else 0)
             elif isinstance(v, bytes):
                 # data
-                values.append(imag.get(v) - offset)
+                values.append(len(v))
+                values.append(imag.get(v) - offset if v else 0)
             elif v is None:
                 # null
                 values.append(0)

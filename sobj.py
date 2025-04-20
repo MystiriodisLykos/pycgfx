@@ -3,6 +3,8 @@ from struct import Struct
 from dict import DictInfo
 from shared import Signature, StandardObject, List, Vector3, OrientationMatrix, Reference
 
+from primitives import VertexAttribute, PrimitiveSet
+
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from cmdl import CMDL
@@ -13,7 +15,7 @@ class SOBJMesh(StandardObject):
     type = 0x1000000
     signature = Signature("SOBJ")
     revision = 0
-    name: str
+    name = ''
     user_data: DictInfo
     shape_index = 0
     material_index = 0
@@ -21,12 +23,10 @@ class SOBJMesh(StandardObject):
     is_visible = True
     priority = 0
     mesh_node_visibility_index = 0
-    mesh_node_name: str
+    mesh_node_name = ''
     def __init__(self, owner) -> None:
         super().__init__()
         self.user_data = DictInfo()
-        self.name = 'mesh'
-        self.mesh_node_name = 'asdf'
         self.owner = owner
     def values(self) -> tuple:
         return (self.type, self.signature, self.revision, self.name, self.user_data,
@@ -52,9 +52,9 @@ class SOBJShape(StandardObject):
     flags = 0
     oriented_bounding_box = 0
     position_offset = Vector3(0, 0, 0)
-    primitive_sets: List
+    primitive_sets: List[PrimitiveSet]
     base_address = 0
-    vertex_attributes: List
+    vertex_attributes: List[VertexAttribute]
     blend_shape = 0
     def __init__(self) -> None:
         super().__init__()

@@ -2,6 +2,7 @@ from dict import DictInfo
 from shared import Signature, StandardObject, Vector3, Matrix, List
 from sobj import SOBJMesh, SOBJShape
 from struct import Struct
+from mtob import MTOB
 
 
 class CMDL(StandardObject):
@@ -9,7 +10,7 @@ class CMDL(StandardObject):
     type = 0x40000012
     signature = Signature('CMDL')
     revision = 0x9000000
-    name: str
+    name = ''
     user_data: DictInfo
     flags = 1
     branch_visible = False
@@ -21,7 +22,7 @@ class CMDL(StandardObject):
     local = Matrix(Vector3(1, 0, 0), Vector3(0, 1, 0), Vector3(0, 0, 1), Vector3(0, 0, 0))
     world = Matrix(Vector3(1, 0, 0), Vector3(0, 1, 0), Vector3(0, 0, 1), Vector3(0, 0, 0))
     meshes: List[SOBJMesh]
-    materials: DictInfo
+    materials: DictInfo[MTOB]
     shapes: List[SOBJShape]
     mesh_nodes: DictInfo
     flags2 = 0
@@ -35,7 +36,6 @@ class CMDL(StandardObject):
         self.materials = DictInfo()
         self.shapes = List([SOBJShape()])
         self.mesh_nodes = DictInfo()
-        self.name = ""
     def values(self) -> tuple:
         return (self.type, self.signature, self.revision, self.name, self.user_data,
                 self.flags, self.branch_visible, self.nr_children, self.animation_group_descriptions,
