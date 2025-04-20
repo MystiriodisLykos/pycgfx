@@ -58,6 +58,8 @@ class InterleavedVertexStream(VertexAttribute):
     memory_area = 0
     vertex_data_entry_size = 0
     vertex_streams: List[VertexAttribute]
+    def __init__(self):
+        self.vertex_streams = List()
     def values(self):
         return (self.type, self.usage, self.flags, self.buffer_object,
             self.location_flag, self.vertex_stream_data, self.location_address,
@@ -73,7 +75,7 @@ class VertexStream(VertexAttribute):
     memory_area = 0
     format_type = 0
     components_count = 0
-    scale = 0
+    scale = 1
     offset = 0
     def values(self):
         return (self.type, self.usage, self.flags, self.buffer_object, self.location_flag,

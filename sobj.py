@@ -54,7 +54,7 @@ class SOBJShape(StandardObject):
     name: str
     user_data: DictInfo
     flags = 0
-    oriented_bounding_box = 0
+    oriented_bounding_box: OrientedBoundingBox
     position_offset: Vector3
     primitive_sets: List[PrimitiveSet]
     base_address = 0
@@ -67,6 +67,7 @@ class SOBJShape(StandardObject):
         self.position_offset = Vector3(0, 0, 0)
         self.primitive_sets = List()
         self.vertex_attributes = List()
+        self.oriented_bounding_box = OrientedBoundingBox()
     def values(self) -> tuple:
         return (self.type, self.signature, self.revision, self.name, self.user_data,
             self.flags, self.oriented_bounding_box, self.position_offset,

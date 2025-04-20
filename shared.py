@@ -68,6 +68,18 @@ class BaseObject(ABC):
         self.refresh_struct()
         for v in self.values():
             if isinstance(v, InlineObject):
+                v.refresh_struct()
+                vals = list(v.flat_values())
+                bufs = []
+                for i in range(len(vals)):
+                    if vals[i] is None: vals[i] = 0
+                    if isinstance(vals[i], bytes): bufs.append(i)
+                    if isinstance(vals[i], Signature): vals[i] = vals[i].data.encode()
+                    if isinstance(vals[i], StandardObject): vals[i] = 0
+                    if isinstance(vals[i], str): vals[i] = 0
+                for i in bufs[::-1]:
+                    vals[i:i+1] = [0, 0]
+                v.struct.pack(*vals)
                 yield from v.flat_values()
             else:
                 yield v
@@ -171,14 +183,20 @@ class ListData(StandardObject, Generic[T]):
         return tuple(self.contents)
     def len(self):
         return len(self.contents)
+    def add(self, value: T):
+        self.contents.append(value)
     
 class List(InlineObject, Generic[T]):
     data: ListData
     def __init__(self, list = None) -> None:
         super().__init__()
         self.data = ListData(list)
+    def refresh_struct(self):
+        self.struct = struct.Struct('ii')
     def values(self) -> tuple:
         return (self.data.len(), self.data if self.data.len() else None)
+    def add(self, value: T):
+        self.data.add(value)
 
 class Vector3(InlineObject):
     struct = struct.Struct('fff')

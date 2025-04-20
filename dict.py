@@ -62,3 +62,5 @@ class DictInfo(InlineObject, Generic[T]):
         self.dict = DICT()
     def values(self) -> tuple:
         return (self.dict.len(), self.dict if self.dict.len() else None)
+    def add(self, name: str, data: T):
+        self.dict.add(name, data)

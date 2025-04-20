@@ -24,6 +24,8 @@ class TXOB(StandardObject, ABC):
 
 class ReferenceTexture(TXOB):
     struct = Struct(TXOB.struct.format + 'i')
+    type = 0x20000004
+    txob: TXOB
     def __init__(self, txob: TXOB):
         super().__init__()
         self.txob = txob
@@ -40,17 +42,17 @@ class PixelBasedTexture(TXOB):
     width = 0
     gl_format = 0
     gl_type = 0
-    level_count = 0
+    mipmap_level_count = 0
     texture_object = 0
     location_flag = 0
     hw_format = 0
     def values(self):
         return (*super().values(), self.height, self.width, self.gl_format, self.gl_type,
-            self.level_count, self.texture_object, self.location_flag, self.hw_format)
+            self.mipmap_level_count, self.texture_object, self.location_flag, self.hw_format)
     def width(self):
         return self.width
     def height(self):
-        return self.height()
+        return self.height
 
 class PixelBasedImage(StandardObject):
     struct = Struct('iiiiiiii')
@@ -62,7 +64,7 @@ class PixelBasedImage(StandardObject):
     location_address = 0
     memory_address = 0
     def values(self):
-        return (self.height, self.width, len(self.data), self.data,
+        return (self.height, self.width, self.data,
             self.dynamic_allocator, self.bits_per_pixel, self.location_address,
             self.memory_address)
 

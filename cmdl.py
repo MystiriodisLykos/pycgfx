@@ -6,7 +6,6 @@ from mtob import MTOB
 
 
 class AnimationGroupMember(StandardObject):
-    struct = Struct('iiiiiiiiixxxx')
     type = 0
     path = ''
     member = ''
@@ -18,7 +17,7 @@ class AnimationGroupMember(StandardObject):
     some_bool = 0
     string = ''
     def refresh_struct(self):
-        fmt = 'iiiiiiiiixxxx'
+        fmt = 'Iiiiiiiiixxxx'
         if self.subtype <= 5:
             fmt += 'i'
         self.struct = Struct(fmt)
@@ -48,7 +47,7 @@ class CMDL(StandardObject):
     struct = Struct('i4siiiiiiixxxxiifffffffff' + 'f' * 12 * 2 + 'i' * 11)
     type = 0x40000012
     signature = Signature('CMDL')
-    revision = 0x9000000
+    revision = 0x7000000
     name = ''
     user_data: DictInfo
     flags = 1
@@ -76,9 +75,9 @@ class CMDL(StandardObject):
         self.world = Matrix(Vector3(1, 0, 0), Vector3(0, 1, 0), Vector3(0, 0, 1), Vector3(0, 0, 0))
         self.user_data = DictInfo()
         self.animation_group_descriptions = DictInfo()
-        self.meshes = List([SOBJMesh(self)])
+        self.meshes = List()
         self.materials = DictInfo()
-        self.shapes = List([SOBJShape()])
+        self.shapes = List()
         self.mesh_nodes = DictInfo()
     def values(self) -> tuple:
         return (self.type, self.signature, self.revision, self.name, self.user_data,
