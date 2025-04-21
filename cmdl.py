@@ -6,7 +6,6 @@ from mtob import MTOB
 
 
 class AnimationGroupMember(StandardObject):
-    struct = Struct('Iiiiiiiiixxxxii')
     type = 0
     path: str = None
     member: str = None
@@ -20,6 +19,7 @@ class AnimationGroupMember(StandardObject):
     tex_mapper = 0
     number = 0
     def refresh_struct(self):
+        # padding is used at runtime
         fmt = 'Iiiiiiiiixxxxi'
         if self.subtype <= 5:
             fmt += 'i'

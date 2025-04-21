@@ -77,6 +77,7 @@ class FragmentOperation(InlineObject):
     struct = Struct(DepthOperation.struct.format + BlendOperation.struct.format + 'IIII')
     depth_operation: DepthOperation
     blend_operation: BlendOperation
+    # stencil commands may be modified at runtime
     stencil_commands: list[PicaCommand]
     def __init__(self):
         self.depth_operation = DepthOperation()
@@ -96,6 +97,7 @@ class TextureCoordinator(InlineObject):
     rotate = 0
     translate_u = 0
     translate_v = 0
+    # this is a flag set that is modified at runtime
     enabled = 0
     transform_matrix: Matrix
     def __init__(self):
@@ -121,6 +123,7 @@ class TexInfo(StandardObject):
     dynamic_allocator = 0
     txob: TXOB
     sampler: TextureSampler
+    # commands + count are modified at runtime
     commands: list[PicaCommand]
     command_size_to_send = 0x38
     def __init__(self, txob: TXOB):
@@ -146,6 +149,7 @@ class SHDR(StandardObject):
         return (self.type, self.signature, self.revision, self.name, self.user_data)
 
 class LinkedShader(SHDR):
+    # padding is modified at runtime
     struct = Struct(SHDR.struct.format + 'ixxxx')
     type = 0x80000001
     reference_shader_name = 'DefaultShader'
@@ -242,6 +246,7 @@ class MTOB(StandardObject):
     shader_parameters_pointer_table = 0
     light_set_index = 0
     fog_index = 0
+    # material id is modified at runtime
     material_id = 0
     def __init__(self):
         self.user_data = DictInfo()

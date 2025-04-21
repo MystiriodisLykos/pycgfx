@@ -11,6 +11,7 @@ if TYPE_CHECKING:
 
 
 class SOBJMesh(StandardObject):
+    # padding is used at runtime
     struct = Struct('i4siiiiiii?BH' + 'x' * 4 * 18 + 'i')
     type = 0x1000000
     signature = Signature("SOBJ")
@@ -53,10 +54,12 @@ class SOBJShape(StandardObject):
     revision = 0
     name = ''
     user_data: DictInfo
+    # flags are modified at runtime
     flags = 0
     oriented_bounding_box: OrientedBoundingBox
     position_offset: Vector3
     primitive_sets: List[PrimitiveSet]
+    # base address is modified at runtime
     base_address = 0
     vertex_attributes: List[VertexAttribute]
     blend_shape = 0

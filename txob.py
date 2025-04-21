@@ -43,6 +43,7 @@ class PixelBasedTexture(TXOB):
     gl_format = 0
     gl_type = 0
     mipmap_level_count = 0
+    # texture object is written to at runtime
     texture_object = 0
     location_flag = 0
     hw_format = 0

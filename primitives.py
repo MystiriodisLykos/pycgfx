@@ -9,6 +9,7 @@ class IndexStream(StandardObject):
     face_data: b''
     buffer_object = 0
     location_flag = 0
+    # command cache + size are modified at runtime
     command_cache = 0
     command_cache_size = 0
     location_address = 0
@@ -23,6 +24,7 @@ class IndexStream(StandardObject):
 class Primitive(StandardObject):
     struct = Struct('iiiiii')
     index_streams: List[IndexStream]
+    # buffer objects are written to at runtime, but are allocated in advance
     buffer_objects: List[int]
     flags = 0
     command_allocator = 0
@@ -51,6 +53,7 @@ class VertexAttribute(StandardObject):
 class InterleavedVertexStream(VertexAttribute):
     struct = Struct('iiiiiiiiiiii')
     type = 0x40000002
+    # buffer object is written to at runtime
     buffer_object = 0
     location_flag = 0
     vertex_stream_data = b''
