@@ -32,6 +32,7 @@ def make_demo_cgfx() -> CGFX:
     cgfx.data.models.add("COMMON", cmdl)
     cmdl.name = "COMMON"
     cmdl.flags = 1
+    cmdl.branch_visible = True
     cmdl.flags2 = 1
 
     skeletal_animation = GraphicsAnimationGroup()
@@ -381,6 +382,7 @@ def write(cgfx: CGFX) -> bytes:
     strings = StringTable()
     imag = StringTable()
     offset = cgfx.prepare(0, strings, imag)
+    offset += -offset % 8 # align to 8 bytes
     offset = strings.prepare(offset)
     cgfx.data.section_size = offset - cgfx.data.offset
     if not imag.empty():

@@ -23,8 +23,8 @@ class StringTable:
     def correct(s: bytes | str) -> bytes:
         if isinstance(s, str):
             return s.encode() + b'\0'
-        elif len(s) % 128 != 0:
-            return s + b'\0' * (128 - len(s) % 128)
+        else:
+            return s + b'\0' * (-len(s) % 8)
         return s
 
     def add(self, s: bytes | str):
@@ -35,7 +35,7 @@ class StringTable:
 
     def prepare(self, offset: int) -> int:
         self.offset = offset
-        self.padding = 4 - (self.total % 4)
+        self.padding = -self.total % 8
         self.total += self.padding
         return offset + self.total
     
@@ -102,8 +102,8 @@ class BaseObject(ABC):
             elif isinstance(v, Signature):
                 values.append(v.data.encode())
             elif isinstance(v, str):
-                # string (0 if empty)
-                values.append(strings.get(v) - offset if v else 0)
+                # string
+                values.append(strings.get(v) - offset)
             elif isinstance(v, bytes):
                 # data
                 values.append(len(v))

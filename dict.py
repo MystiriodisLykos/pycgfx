@@ -22,13 +22,16 @@ class Node(InlineObject, Generic[T]):
 
     def values(self) -> tuple:
         return (self.refbit, self.left_index, self.right_index, self.name, self.content)
+    
+    def get_name(self) -> str:
+        return self.name or ''
 
 class DICT(StandardObject, Generic[T]):
     signature = Signature('DICT')
     nodes: list[Node]
     def __init__(self) -> None:
         super().__init__()
-        self.nodes = [Node('', None)]
+        self.nodes = [Node(None, None)]
 
     def refresh_struct(self):
         self.struct = Struct('4sii' + Node.struct.format * len(self.nodes))
@@ -45,11 +48,11 @@ class DICT(StandardObject, Generic[T]):
         self.regenerate()
 
     def regenerate(self):
-        self.nodes[1:] = sorted(self.nodes[1:], key=lambda n: (-len(n.name), n.name))
-        tree = patricia.generate([n.name for n in self.nodes if n != self.nodes[0]])
+        self.nodes[1:] = sorted(self.nodes[1:], key=lambda n: (-len(n.get_name()), n.get_name()))
+        tree = patricia.generate([n.get_name() for n in self.nodes if n != self.nodes[0]])
         tree.root.idx_entry = -1
         for n in self.nodes:
-            p = tree.get(n.name)
+            p = tree.get(n.get_name())
             if n != self.nodes[0]: n.refbit = p.refbit
             n.left_index = p.left.idx_entry + 1
             n.right_index = p.right.idx_entry + 1

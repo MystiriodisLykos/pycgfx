@@ -7,9 +7,9 @@ from mtob import MTOB
 
 class AnimationGroupMember(StandardObject):
     type = 0
-    path = ''
-    member = ''
-    blend_operation_index = ''
+    path: str = None
+    member: str = None
+    blend_operation_index: str = None
     object_type = 0
     member_type = 0
     res_material_ptr = 0
