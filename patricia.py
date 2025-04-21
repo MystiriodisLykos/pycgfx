@@ -48,13 +48,14 @@ class PatTree:
         new_node.refbit = bit
         new_node.left = left if get_bit(name, bit) else new_node
         new_node.right = new_node if get_bit(name, bit) else left
-        if get_bit(name, bit):
+        if get_bit(name, current.refbit):
             current.right = new_node
         else:
             current.left = new_node
         return new_node
     
     def get(self, name: str) -> Node:
+        name = name.ljust(self.string_length, '\0')
         current = self.root
         while current.name != name and current.refbit > current.left.refbit:
             current = current.right if get_bit(name, current.refbit) else current.left
