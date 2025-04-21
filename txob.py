@@ -37,19 +37,18 @@ class ReferenceTexture(TXOB):
         return self.txob.height()
 
 class PixelBasedTexture(TXOB):
-    struct = Struct(TXOB.struct.format + 'iiiiiiii')
+    # padding is written to at runtime
+    struct = Struct(TXOB.struct.format + 'iiiiixxxxii')
     height = 0
     width = 0
     gl_format = 0
     gl_type = 0
     mipmap_level_count = 0
-    # texture object is written to at runtime
-    texture_object = 0
     location_flag = 0
     hw_format = 0
     def values(self):
         return (*super().values(), self.height, self.width, self.gl_format, self.gl_type,
-            self.mipmap_level_count, self.texture_object, self.location_flag, self.hw_format)
+            self.mipmap_level_count, self.location_flag, self.hw_format)
     def width(self):
         return self.width
     def height(self):

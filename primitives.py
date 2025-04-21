@@ -51,10 +51,9 @@ class VertexAttribute(StandardObject):
     flags = 0
 
 class InterleavedVertexStream(VertexAttribute):
-    struct = Struct('iiiiiiiiiiii')
+    # padding is written to at runtime
+    struct = Struct('iiixxxxiiiiiiii')
     type = 0x40000002
-    # buffer object is written to at runtime
-    buffer_object = 0
     location_flag = 0
     vertex_stream_data = b''
     location_address = 0
@@ -64,7 +63,7 @@ class InterleavedVertexStream(VertexAttribute):
     def __init__(self):
         self.vertex_streams = List()
     def values(self):
-        return (self.type, self.usage, self.flags, self.buffer_object,
+        return (self.type, self.usage, self.flags,
             self.location_flag, self.vertex_stream_data, self.location_address,
             self.memory_area, self.vertex_data_entry_size, self.vertex_streams)
 

@@ -87,7 +87,8 @@ class FragmentOperation(InlineObject):
         return (self.depth_operation, self.blend_operation, *self.stencil_commands)
 
 class TextureCoordinator(InlineObject):
-    struct = Struct('iiiifffffi' + 'f' * 12)
+    # first byte of padding is modified at runtime
+    struct = Struct('iiiifffff?xxx' + 'f' * 12)
     source_coordinate = 0
     projection = 0
     reference_camera = 0
@@ -97,15 +98,15 @@ class TextureCoordinator(InlineObject):
     rotate = 0
     translate_u = 0
     translate_v = 0
-    # this is a flag set that is modified at runtime
-    enabled = 0
+    # if true, matrix is generated at runtime based on matrix mode
+    should_generate_matrix = False
     transform_matrix: Matrix
     def __init__(self):
         self.transform_matrix = Matrix(Vector4(1, 0, 0, 0), Vector4(0, 1, 0, 0), Vector4(0, 0, 1, 0))
     def values(self):
         return (self.source_coordinate, self.projection, self.reference_camera,
             self.matrix_mode, self.scale_u, self.scale_v, self.rotate,
-            self.translate_u, self.translate_v, self.enabled, self.transform_matrix)
+            self.translate_u, self.translate_v, self.should_generate_matrix, self.transform_matrix)
 
 class TextureSampler(StandardObject):
     struct = Struct('Iii')
@@ -224,7 +225,8 @@ class FragmentShader(StandardObject):
             *self.texture_combiners, self.alpha_test_command, *self.buffer_commands)
 
 class MTOB(StandardObject):
-    struct = Struct('i4siiiiiii' + MaterialColor.struct.format + Rasterization.struct.format + FragmentOperation.struct.format + 'i' + TextureCoordinator.struct.format * 3 + 'iii' + 'iiiiiiii' + 'IIIIIIIIIIIII' + 'i')
+    # padding is written to at runtime
+    struct = Struct('i4siiiiiii' + MaterialColor.struct.format + Rasterization.struct.format + FragmentOperation.struct.format + 'i' + TextureCoordinator.struct.format * 3 + 'iii' + 'iiiiiiii' + 'IIIIIIIIIIIII' + 'xxxx')
     type = 0x8000000
     signature = Signature("MTOB")
     revision = 0x6000000
@@ -246,8 +248,6 @@ class MTOB(StandardObject):
     shader_parameters_pointer_table = 0
     light_set_index = 0
     fog_index = 0
-    # material id is modified at runtime
-    material_id = 0
     def __init__(self):
         self.user_data = DictInfo()
         self.material_color = MaterialColor()
@@ -269,16 +269,17 @@ class MTOB(StandardObject):
             self.shader_parameters_hash(),
             self.texture_coordinators_hash(),
             self.texture_samplers_hash(),
-            self.texture_mappers_hash(),
+            # texture mappers hash is calculated at runtime
+            0,
             self.material_color_hash(),
             self.rasterization_hash(),
             self.fragment_lighting_hash(),
-            self.fragment_lighting_table_hash(),
+            # fragment lighting table hash is calculated at runtime
+            0,
             self.fragmnent_lighting_table_parameters_hash(),
             self.texture_combiners_hash(),
             self.alpha_test_hash(),
-            self.fragment_operations_hash(),
-            self.material_id)
+            self.fragment_operations_hash())
     def shading_parameters_hash(self):
         # TODO
         return 0xda5de5cd
@@ -291,9 +292,6 @@ class MTOB(StandardObject):
     def texture_samplers_hash(self):
         # TODO
         return 0x9ae75b22
-    def texture_mappers_hash(self):
-        # TODO
-        return 0
     def material_color_hash(self):
         # TODO
         return 0x66f7700c
@@ -303,9 +301,6 @@ class MTOB(StandardObject):
     def fragment_lighting_hash(self):
         # TODO
         return 0xe0099c31
-    def fragment_lighting_table_hash(self):
-        # TODO
-        return 0
     def fragmnent_lighting_table_parameters_hash(self):
         # TODO
         return 0x3b75655e
