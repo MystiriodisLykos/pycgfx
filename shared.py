@@ -68,18 +68,18 @@ class BaseObject(ABC):
         self.refresh_struct()
         for v in self.values():
             if isinstance(v, InlineObject):
-                v.refresh_struct()
-                vals = list(v.flat_values())
-                bufs = []
-                for i in range(len(vals)):
-                    if vals[i] is None: vals[i] = 0
-                    if isinstance(vals[i], bytes): bufs.append(i)
-                    if isinstance(vals[i], Signature): vals[i] = vals[i].data.encode()
-                    if isinstance(vals[i], StandardObject): vals[i] = 0
-                    if isinstance(vals[i], str): vals[i] = 0
-                for i in bufs[::-1]:
-                    vals[i:i+1] = [0, 0]
-                v.struct.pack(*vals)
+                # v.refresh_struct()
+                # vals = list(v.flat_values())
+                # bufs = []
+                # for i in range(len(vals)):
+                #     if vals[i] is None: vals[i] = 0
+                #     if isinstance(vals[i], bytes): bufs.append(i)
+                #     if isinstance(vals[i], Signature): vals[i] = vals[i].data.encode()
+                #     if isinstance(vals[i], StandardObject): vals[i] = 0
+                #     if isinstance(vals[i], str): vals[i] = 0
+                # for i in bufs[::-1]:
+                #     vals[i:i+1] = [0, 0]
+                # v.struct.pack(*vals)
                 yield from v.flat_values()
             else:
                 yield v
@@ -95,7 +95,10 @@ class BaseObject(ABC):
             elif isinstance(v, InlineObject):
                 values += list(v.real_values(strings, imag))
             elif isinstance(v, Reference):
-                values.append(v.obj.offset - offset)
+                if v.obj is None:
+                    values.append(0)
+                else:
+                    values.append(v.obj.offset - offset)
             elif isinstance(v, Signature):
                 values.append(v.data.encode())
             elif isinstance(v, str):
@@ -104,6 +107,8 @@ class BaseObject(ABC):
             elif isinstance(v, bytes):
                 # data
                 values.append(len(v))
+                offset += 4
+                fmt_pos += 1
                 values.append(imag.get(v) - offset if v else 0)
             elif v is None:
                 # null
@@ -210,11 +215,20 @@ class Vector3(InlineObject):
     def values(self) -> tuple:
         return (self.x, self.y, self.z)
 
+class Vector4(Vector3):
+    struct = struct.Struct('ffff')
+    w: float
+    def __init__(self, x, y, z, w):
+        super().__init__(x, y, z)
+        self.w = w
+    def values(self):
+        return (self.x, self.y, self.z, self.w)
+
 class Matrix(InlineObject):
     struct = struct.Struct('f'*12)
-    columns: list[Vector3]
-    def __init__(self, col1, col2, col3, col4):
-        self.columns = [col1, col2, col3, col4]
+    columns: list[Vector4]
+    def __init__(self, col1, col2, col3):
+        self.columns = [col1, col2, col3]
     def values(self) -> tuple:
         return tuple(self.columns)
 

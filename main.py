@@ -2,7 +2,7 @@ from cgfx import CGFX
 from cmdl import CMDL, CMDLWithSkeleton, GraphicsAnimationGroup, AnimationGroupMember
 from shared import StringTable, Vector3
 from txob import ImageTexture, PixelBasedImage, ReferenceTexture
-from sobj import SOBJMesh, SOBJShape, SOBJSkeleton
+from sobj import SOBJMesh, SOBJShape, SOBJSkeleton, Bone
 from primitives import Primitive, PrimitiveSet, InterleavedVertexStream, IndexStream, VertexStream
 from mtob import MTOB, ColorFloat, TexInfo, PicaCommand, LinkedShader
 
@@ -67,7 +67,7 @@ def make_demo_cgfx() -> CGFX:
 
     meshes_zero_is_visible = AnimationGroupMember()
     visibility_animation.members.add('Meshes[0].IsVisible', meshes_zero_is_visible)
-    meshes_zero_is_visible.type = 0x10000000
+    meshes_zero_is_visible.type = 0x1000000
     meshes_zero_is_visible.path = 'Meshes[0].IsVisible'
     meshes_zero_is_visible.member = '0'
     meshes_zero_is_visible.object_type = 36
@@ -296,8 +296,9 @@ def make_demo_cgfx() -> CGFX:
     mesh.mesh_node_visibility_index = 65535
 
     shape = SOBJShape()
+    cmdl.shapes.add(shape)
     shape.oriented_bounding_box.center_pos = Vector3(0, -1, 0)
-    shape.oriented_bounding_box.size = Vector3(26, 13, 0)
+    shape.oriented_bounding_box.bb_size = Vector3(26, 13, 0)
     
     primitive_set = PrimitiveSet()
     shape.primitive_sets.add(primitive_set)
@@ -311,12 +312,15 @@ def make_demo_cgfx() -> CGFX:
     index_stream.data_type = 0x1401
     index_stream.primitive_mode = 0
     index_stream.is_invisible = True
-    index_stream.face_data = b'\0\1\2\1\3\2'
+    index_stream.face_data = bytes([0, 1, 2, 1, 3, 2])
+    primitive.buffer_objects.add(0)
+    primitive.flags = 8
     
     interleaved_vertex_stream = InterleavedVertexStream()
     shape.vertex_attributes.add(interleaved_vertex_stream)
     interleaved_vertex_stream.usage = 0x15
     interleaved_vertex_stream.flags = 2
+    interleaved_vertex_stream.vertex_data_entry_size = 20
     interleaved_vertex_stream.vertex_stream_data = bytes([
         0x00, 0x00, 0x50, 0xC1, 0x00, 0x00, 0xF0, 0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x50, 0x41, 0x00, 0x00, 0xF0, 0xC0, 0x00, 0x00, 0x00, 0x00, 
@@ -331,7 +335,7 @@ def make_demo_cgfx() -> CGFX:
     position_stream.flags = 0
     position_stream.format_type = 0x1406
     position_stream.components_count = 3
-    position_stream.offset = 0
+    position_stream.vert_offset = 0
 
     texcoord_stream = VertexStream()
     interleaved_vertex_stream.vertex_streams.add(texcoord_stream)
@@ -339,7 +343,20 @@ def make_demo_cgfx() -> CGFX:
     texcoord_stream.flags = 0
     texcoord_stream.format_type = 0x1406
     texcoord_stream.components_count = 2
-    texcoord_stream.offset =  12
+    texcoord_stream.vert_offset = 12
+
+    skeleton = SOBJSkeleton()
+    cmdl.skeleton = skeleton
+    skeleton.flags = 2
+    bone = Bone()
+    skeleton.bones.add('banner', bone)
+    skeleton.root_bone = bone
+    bone.name = 'banner'
+    bone.flags = 476
+    bone.position = Vector3(0, 1, 0)
+    bone.local.columns[1].w = 1
+    bone.inverse_base.columns[1].w = -1
+    bone.billboard_mode = 5
 
     mtob = MTOB()
     cmdl.materials.add('mt_banner', mtob)
@@ -365,12 +382,12 @@ def write(cgfx: CGFX) -> bytes:
     imag = StringTable()
     offset = cgfx.prepare(0, strings, imag)
     offset = strings.prepare(offset)
+    cgfx.data.section_size = offset - cgfx.data.offset
     if not imag.empty():
         cgfx.header.nr_blocks = 2
         offset += 8 # IMAG header
     offset = imag.prepare(offset)
     cgfx.header.file_size = offset
-    cgfx.data.section_size = offset - cgfx.data.offset
     data = cgfx.write(strings, imag)
     data += strings.write()
     if not imag.empty():

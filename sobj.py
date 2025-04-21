@@ -1,7 +1,7 @@
 from struct import Struct
 
 from dict import DictInfo
-from shared import Signature, StandardObject, List, Vector3, OrientationMatrix, Reference, Matrix
+from shared import Signature, StandardObject, List, Vector3, Vector4, OrientationMatrix, Reference, Matrix
 
 from primitives import VertexAttribute, PrimitiveSet
 
@@ -34,24 +34,24 @@ class SOBJMesh(StandardObject):
             self.priority, self.mesh_node_visibility_index, self.mesh_node_name)
 
 class OrientedBoundingBox(StandardObject):
-    struct = 'i' + 'f' * (3 + 9 + 3)
+    struct = Struct('I' + 'f' * (3 + 9 + 3))
     type = 0x80000000
     center_pos: Vector3
     orientation: Matrix
-    size: Vector3
+    bb_size: Vector3
     def __init__(self):
         self.center_pos = Vector3(0, 0, 0)
         self.orientation = OrientationMatrix(Vector3(1, 0, 0), Vector3(0, 1, 0), Vector3(0, 0, 1))
-        self.size = Vector3(1, 1, 1)
+        self.bb_size = Vector3(1, 1, 1)
     def values(self) -> tuple:
-        return (self.type, self.center_pos, self.orientation, self.size)
+        return (self.type, self.center_pos, self.orientation, self.bb_size)
 
 class SOBJShape(StandardObject):
     struct = Struct('i4siiiiiifffiiiiii')
     type = 0x10000001
     signature = Signature("SOBJ")
     revision = 0
-    name: str
+    name = ''
     user_data: DictInfo
     flags = 0
     oriented_bounding_box: OrientedBoundingBox
@@ -63,7 +63,6 @@ class SOBJShape(StandardObject):
     def __init__(self) -> None:
         super().__init__()
         self.user_data = DictInfo()
-        self.name = 'shape'
         self.position_offset = Vector3(0, 0, 0)
         self.primitive_sets = List()
         self.vertex_attributes = List()
@@ -95,9 +94,15 @@ class Bone(StandardObject):
         self.scale = Vector3(1, 1, 1)
         self.rotation = Vector3(0, 0, 0)
         self.position = Vector3(0, 0, 0)
-        self.local = Matrix(Vector3(1, 0, 0), Vector3(0, 1, 0), Vector3(0, 0, 1), Vector3(0, 0, 0))
-        self.world = Matrix(Vector3(1, 0, 0), Vector3(0, 1, 0), Vector3(0, 0, 1), Vector3(0, 0, 0))
-        self.inverse_base = Matrix(Vector3(1, 0, 0), Vector3(0, 1, 0), Vector3(0, 0, 1), Vector3(0, 0, 0))
+        self.local = Matrix(Vector4(1, 0, 0, 0), Vector4(0, 1, 0, 0), Vector4(0, 0, 1, 0))
+        self.world = Matrix(Vector4(1, 0, 0, 0), Vector4(0, 1, 0, 0), Vector4(0, 0, 1, 0))
+        self.inverse_base = Matrix(Vector4(1, 0, 0, 0), Vector4(0, 1, 0, 0), Vector4(0, 0, 1, 0))
+    def values(self):
+        return (self.name, self.flags, self.joint_id, self.parent_id,
+            Reference(self.parent), Reference(self.child),
+            Reference(self.previous_sibling), Reference(self.next_sibling),
+            self.scale, self.rotation, self.position, self.local, self.world, self.inverse_base,
+            self.billboard_mode)
 
 class SOBJSkeleton(StandardObject):
     struct = Struct('i4siiiiiiiii')
@@ -115,5 +120,5 @@ class SOBJSkeleton(StandardObject):
         self.bones = DictInfo()
     def values(self):
         return (self.type, self.signature, self.revision, self.name, self.user_data,
-            self.bones, self.root_bone, self.scaling_rule, self.flags)
+            self.bones, Reference(self.root_bone), self.scaling_rule, self.flags)
 

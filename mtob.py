@@ -1,4 +1,4 @@
-from shared import InlineObject, StandardObject, Signature, Matrix, Vector3, Reference
+from shared import InlineObject, StandardObject, Signature, Matrix, Vector3, Vector4, Reference
 from dict import DictInfo
 from struct import Struct
 from txob import TXOB
@@ -48,15 +48,15 @@ class MaterialColor(InlineObject):
 class Rasterization(InlineObject):
     struct = Struct('iifii')
     flags = 0
-    culling_mode = 3
+    cull_mode = 1
     polygon_offset_unit = 0
-    command = PicaCommand(0, 0x00010040)
+    command = PicaCommand(2, 0x00010040)
     def values(self):
-        return (self.flags, self.culling_mode, self.polygon_offset_unit, self.command)
+        return (self.flags, self.cull_mode, self.polygon_offset_unit, self.command)
 
 class DepthOperation(InlineObject):
     struct = Struct('iiiii')
-    flags = 3
+    flags = 1
     commands: list[PicaCommand]
     def __init__(self):
         self.commands = [PicaCommand(0x41, 0x10107), PicaCommand(0x3000000, 0x80126)]
@@ -65,11 +65,11 @@ class DepthOperation(InlineObject):
 
 class BlendOperation(InlineObject):
     struct = Struct('iffffIIIIII')
-    mode = 0
+    mode = 1
     blend = ColorFloat(0, 0, 0, 1)
     commands: list[PicaCommand]
     def __init__(self):
-        self.commands = [PicaCommand(0x40100, 0x803f0100), PicaCommand(0x76760000, 0), PicaCommand(0xff000000, 0)]
+        self.commands = [PicaCommand(0xe40100, 0x803f0100), PicaCommand(0x76760000, 0), PicaCommand(0xff000000, 0)]
     def values(self):
         return (self.mode, self.blend, *self.commands)
 
@@ -81,7 +81,7 @@ class FragmentOperation(InlineObject):
     def __init__(self):
         self.depth_operation = DepthOperation()
         self.blend_operation = BlendOperation()
-        self.stencil_commands = [PicaCommand(0xff000000, 0xd0105), PicaCommand(0, 0xf0106)]
+        self.stencil_commands = [PicaCommand(0, 0xd0105), PicaCommand(0, 0xf0106)]
     def values(self):
         return (self.depth_operation, self.blend_operation, *self.stencil_commands)
 
@@ -99,7 +99,7 @@ class TextureCoordinator(InlineObject):
     enabled = 0
     transform_matrix: Matrix
     def __init__(self):
-        self.transform_matrix = Matrix(Vector3(1, 0, 0), Vector3(0, 0, 1), Vector3(0, 0, 0), Vector3(0, 1, 0))
+        self.transform_matrix = Matrix(Vector4(1, 0, 0, 0), Vector4(0, 1, 0, 0), Vector4(0, 0, 1, 0))
     def values(self):
         return (self.source_coordinate, self.projection, self.reference_camera,
             self.matrix_mode, self.scale_u, self.scale_v, self.rotate,
@@ -127,14 +127,14 @@ class TexInfo(StandardObject):
         self.txob = txob
         self.sampler = TextureSampler(self)
         self.commands = [PicaCommand(0, 0x1008e), PicaCommand(0xFF000000, 0x809f0081),
-            PicaCommand(0, 0x1002206), PicaCommand(0, 0),
+            PicaCommand(0, 0x2206), PicaCommand(0, 0),
             PicaCommand(0, 0), PicaCommand(0, 0), PicaCommand(0, 0)]
     def values(self):
         return (self.type, self.dynamic_allocator, self.txob, self.sampler,
             *self.commands, self.command_size_to_send)
 
 class SHDR(StandardObject):
-    struct = Struct('i4siiii')
+    struct = Struct('I4siiii')
     type: int
     signature = Signature("SHDR")
     revision = 0x5000000
@@ -164,6 +164,19 @@ class FragmentLighting(InlineObject):
         return (self.flags, self.layer_config, self.fresnel_config, self.bump_mode,
             self.bump_texture, self.is_bump_renormalize)
 
+class FragmentLightingTable(StandardObject):
+    struct = Struct('iiiiii')
+    reflectance_r_sampler = None
+    reflectance_g_sampler = None
+    reflectance_b_sampler = None
+    distribution_0_sampler = None
+    distribution_1_sampler = None
+    fresnel_sampler = None
+    def values(self):
+        return (self.reflectance_r_sampler, self.reflectance_g_sampler,
+            self.reflectance_b_sampler, self.distribution_0_sampler,
+            self.distribution_1_sampler, self.fresnel_sampler)
+
 class TextureCombiner(InlineObject):
     struct = Struct('ihhIihhBBBBhh')
     constant = 0
@@ -177,7 +190,7 @@ class TextureCombiner(InlineObject):
     scale_rgb = 0
     scale_alpha = 0
     def __init__(self, i):
-        self.header = 0x804f0000 | (0xc0 + i * 8)
+        self.header = 0x804f0000 | ((0xc0 if i < 4 else 0xd0) + i * 8)
         self.const_rgba = ColorByte(0, 0, 0, 255)
     def values(self):
         return (self.constant, self.src_rgb, self.src_alpha, self.header,
@@ -188,13 +201,14 @@ class FragmentShader(StandardObject):
     struct = Struct('ffff' + FragmentLighting.struct.format + 'i' + TextureCombiner.struct.format * 6 + 'IIIIIIII')
     buffer_color: ColorFloat
     fragment_lighting: FragmentLighting
-    fragment_lighting_table = None
+    fragment_lighting_table: FragmentLightingTable
     texture_combiners: list[TextureCombiner]
     alpha_test_command: PicaCommand
     buffer_commands: list[PicaCommand]
     def __init__(self):
         self.buffer_color = ColorFloat(0, 0, 0, 0)
         self.fragment_lighting = FragmentLighting()
+        self.fragment_lighting_table = FragmentLightingTable()
         self.texture_combiners = [TextureCombiner(i) for i in range(6)]
         self.alpha_test_command = PicaCommand(0x10, 0xf0104)
         self.buffer_commands = [
@@ -206,7 +220,7 @@ class FragmentShader(StandardObject):
             *self.texture_combiners, self.alpha_test_command, *self.buffer_commands)
 
 class MTOB(StandardObject):
-    struct = Struct('i4siiiiiii' + MaterialColor.struct.format + Rasterization.struct.format + FragmentOperation.struct.format + 'i' + TextureCoordinator.struct.format * 3 + 'iii' + 'iiiiiii' + 'IIIIIIIIIIIII' + 'i')
+    struct = Struct('i4siiiiiii' + MaterialColor.struct.format + Rasterization.struct.format + FragmentOperation.struct.format + 'i' + TextureCoordinator.struct.format * 3 + 'iii' + 'iiiiiiii' + 'IIIIIIIIIIIII' + 'i')
     type = 0x8000000
     signature = Signature("MTOB")
     revision = 0x6000000
@@ -243,7 +257,7 @@ class MTOB(StandardObject):
             self.flags, self.texture_coordinates_config, self.transluscency_kind,
             self.material_color, self.rasterization, self.fragment_operations,
             self.used_texture_coordinates_count, *self.texture_coordinators,
-            *self.texture_mappers, self.fragment_shader, self.shader_program_description_index,
+            *self.texture_mappers, self.shader, self.fragment_shader, self.shader_program_description_index,
             self.shader_parameters_count, self.shader_parameters_pointer_table,
             self.light_set_index, self.fog_index,
             self.shading_parameters_hash(),

@@ -23,7 +23,7 @@ class IndexStream(StandardObject):
 class Primitive(StandardObject):
     struct = Struct('iiiiii')
     index_streams: List[IndexStream]
-    buffer_objects: List
+    buffer_objects: List[int]
     flags = 0
     command_allocator = 0
     def __init__(self):
@@ -76,11 +76,11 @@ class VertexStream(VertexAttribute):
     format_type = 0
     components_count = 0
     scale = 1
-    offset = 0
+    vert_offset = 0
     def values(self):
         return (self.type, self.usage, self.flags, self.buffer_object, self.location_flag,
             self.vertex_stream_data, self.location_address, self.memory_area,
-            self.format_type, self.components_count, self.scale, self.offset)
+            self.format_type, self.components_count, self.scale, self.vert_offset)
 
 class VertexParamAttribute(VertexAttribute):
     struct = Struct('iiiiifii')

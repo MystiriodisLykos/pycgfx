@@ -23,14 +23,14 @@ class TXOB(StandardObject, ABC):
         pass
 
 class ReferenceTexture(TXOB):
-    struct = Struct(TXOB.struct.format + 'i')
+    struct = Struct(TXOB.struct.format + 'ii')
     type = 0x20000004
     txob: TXOB
     def __init__(self, txob: TXOB):
         super().__init__()
         self.txob = txob
     def values(self):
-        return (*super().values(), Reference(self.txob))
+        return (*super().values(), self.txob.name, Reference(self.txob))
     def width(self):
         return self.txob.width()
     def height(self):

@@ -1,5 +1,5 @@
 from dict import DictInfo
-from shared import Signature, StandardObject, Vector3, Matrix, List
+from shared import Signature, StandardObject, Vector3, Vector4, Matrix, List
 from sobj import SOBJMesh, SOBJShape, SOBJSkeleton
 from struct import Struct
 from mtob import MTOB
@@ -23,13 +23,13 @@ class AnimationGroupMember(StandardObject):
         self.struct = Struct(fmt)
     def values(self):
         return (self.type, self.path, self.member, self.blend_operation_index,
-            self.object_type, self.member, self.res_material_ptr, self.subtype,
+            self.object_type, self.member_type, self.res_material_ptr, self.subtype,
             self.some_bool) + ((self.string,) if self.subtype <= 5 else ())
     
 
 class GraphicsAnimationGroup(StandardObject):
-    struct = Struct('iiiiiiiii')
-    type = 0x8000000
+    struct = Struct('Iiiiiiiii')
+    type = 0x80000000
     flags = 0
     name = ''
     member_type = 0
@@ -71,8 +71,8 @@ class CMDL(StandardObject):
         self.scale = Vector3(1, 1, 1)
         self.rotation = Vector3(0, 0, 0)
         self.translation = Vector3(0, 0, 0)
-        self.local = Matrix(Vector3(1, 0, 0), Vector3(0, 1, 0), Vector3(0, 0, 1), Vector3(0, 0, 0))
-        self.world = Matrix(Vector3(1, 0, 0), Vector3(0, 1, 0), Vector3(0, 0, 1), Vector3(0, 0, 0))
+        self.local = Matrix(Vector4(1, 0, 0, 0), Vector4(0, 1, 0, 0), Vector4(0, 0, 1, 0))
+        self.world = Matrix(Vector4(1, 0, 0, 0), Vector4(0, 1, 0, 0), Vector4(0, 0, 1, 0))
         self.user_data = DictInfo()
         self.animation_group_descriptions = DictInfo()
         self.meshes = List()

@@ -25,7 +25,6 @@ class Node(InlineObject, Generic[T]):
 
 class DICT(StandardObject, Generic[T]):
     signature = Signature('DICT')
-    section_size = 0
     nodes: list[Node]
     def __init__(self) -> None:
         super().__init__()
@@ -35,7 +34,8 @@ class DICT(StandardObject, Generic[T]):
         self.struct = Struct('4sii' + Node.struct.format * len(self.nodes))
 
     def values(self) -> tuple:
-        return (self.signature, self.section_size, self.len()) + tuple(self.nodes)
+        self.refresh_struct()
+        return (self.signature, self.struct.size, self.len()) + tuple(self.nodes)
 
     def len(self):
         return len(self.nodes) - 1
