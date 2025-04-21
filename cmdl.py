@@ -6,6 +6,7 @@ from mtob import MTOB
 
 
 class AnimationGroupMember(StandardObject):
+    struct = Struct('Iiiiiiiiixxxxii')
     type = 0
     path: str = None
     member: str = None
@@ -16,15 +17,17 @@ class AnimationGroupMember(StandardObject):
     subtype = 0
     some_bool = 0
     string = ''
+    tex_mapper = 0
+    number = 0
     def refresh_struct(self):
-        fmt = 'Iiiiiiiiixxxx'
+        fmt = 'Iiiiiiiiixxxxi'
         if self.subtype <= 5:
             fmt += 'i'
         self.struct = Struct(fmt)
     def values(self):
         return (self.type, self.path, self.member, self.blend_operation_index,
             self.object_type, self.member_type, self.res_material_ptr, self.subtype,
-            self.some_bool) + ((self.string,) if self.subtype <= 5 else ())
+            self.some_bool) + ((self.string, self.tex_mapper) if self.subtype <= 5 else (self.number,))
     
 
 class GraphicsAnimationGroup(StandardObject):
