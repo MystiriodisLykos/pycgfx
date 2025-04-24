@@ -5,28 +5,15 @@ from txob import ImageTexture, PixelBasedImage, ReferenceTexture
 from sobj import SOBJMesh, SOBJShape, SOBJSkeleton, Bone
 from primitives import Primitive, PrimitiveSet, InterleavedVertexStream, IndexStream, VertexStream
 from mtob import MTOB, ColorFloat, TexInfo, PicaCommand, LinkedShader
+import swizzler
+from PIL import Image
 
 
 def make_demo_cgfx() -> CGFX:
     cgfx = CGFX()
-    txob = ImageTexture()
+    txob = swizzler.to_txob(Image.open("banner.png"))
     cgfx.data.textures.add("COMMON1", txob)
     txob.name = 'COMMON1'
-    txob.height = 128
-    txob.width = 256
-    txob.gl_format = 0x6752
-    txob.gl_type = 0x8033
-    txob.mipmap_level_count = 1
-    txob.hw_format = 4
-
-    image = PixelBasedImage()
-    txob.pixel_based_image = image
-    image.height = 128
-    image.width = 256
-    image.bits_per_pixel = 16
-
-    with open("red-viper-texture-data.bin", "rb") as f:
-        image.data = f.read()
 
     cmdl = CMDLWithSkeleton()
     cgfx.data.models.add("COMMON", cmdl)
