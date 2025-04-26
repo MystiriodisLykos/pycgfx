@@ -2,6 +2,29 @@ from shared import InlineObject, StandardObject, Signature, Matrix, Vector3, Vec
 from dict import DictInfo
 from struct import Struct
 from txob import TXOB
+from enum import IntEnum, IntFlag
+
+class CullMode(IntEnum):
+    Never = 0
+    FrontFace = 1
+    BackFace = 2
+
+class TextureProjection(IntEnum):
+    UVMap = 0
+    CameraCubeMap = 1
+    CameraSphereMap = 2
+    ProjectionMap = 3
+    ShadowMap = 4
+    ShadowCubeMap = 5
+
+class FresnelConfig(IntFlag):
+    Primary = 1
+    Secondary = 2
+
+class BumpMode(IntEnum):
+    NotUsed = 0
+    AsBump = 1
+    AsTangent = 2
 
 class Color(InlineObject):
     def __init__(self, r, g, b, a):
@@ -48,7 +71,7 @@ class MaterialColor(InlineObject):
 class Rasterization(InlineObject):
     struct = Struct('iifii')
     flags = 0
-    cull_mode = 1
+    cull_mode = CullMode.FrontFace
     polygon_offset_unit = 0
     command = PicaCommand(2, 0x00010040)
     def values(self):
@@ -90,7 +113,7 @@ class TextureCoordinator(InlineObject):
     # first byte of padding is modified at runtime
     struct = Struct('iiiifffff?xxx' + 'f' * 12)
     source_coordinate = 0
-    projection = 0
+    projection = TextureProjection.UVMap
     reference_camera = 0
     matrix_mode = 0
     scale_u = 1
@@ -161,9 +184,9 @@ class FragmentLighting(InlineObject):
     struct = Struct('iiiiii')
     flags = 0
     layer_config = 0
-    fresnel_config = 0
+    fresnel_config = FresnelConfig(0)
     bump_texture = 0
-    bump_mode = 0
+    bump_mode = BumpMode.NotUsed
     is_bump_renormalize = 0
     def values(self):
         return (self.flags, self.layer_config, self.fresnel_config, self.bump_mode,

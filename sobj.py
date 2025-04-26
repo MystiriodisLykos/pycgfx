@@ -1,5 +1,7 @@
 from struct import Struct
 
+from enum import IntEnum
+
 from dict import DictInfo
 from shared import Signature, StandardObject, List, Vector3, Vector4, OrientationMatrix, Reference, Matrix
 
@@ -9,6 +11,19 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from cmdl import CMDL
 
+class SkeletonScalingRule(IntEnum):
+    Standard = 0
+    Maya = 1
+    SoftImage = 2
+
+class BillboardMode(IntEnum):
+    Off = 0
+    World = 2
+    WorldViewpoint = 3
+    Screen = 4
+    ScreenViewpoint = 5
+    YAxial = 6
+    YAxialViewpoint = 7
 
 class SOBJMesh(StandardObject):
     # padding is used at runtime
@@ -92,7 +107,7 @@ class Bone(StandardObject):
     local: Matrix
     world: Matrix
     inverse_base: Matrix
-    billboard_mode = 0
+    billboard_mode = BillboardMode.Off
     def __init__(self):
         self.scale = Vector3(1, 1, 1)
         self.rotation = Vector3(0, 0, 0)
@@ -116,7 +131,7 @@ class SOBJSkeleton(StandardObject):
     user_data: DictInfo
     bones: DictInfo[Bone]
     root_bone = None
-    scaling_rule = 0
+    scaling_rule = SkeletonScalingRule.Standard
     flags = 0
     def __init__(self):
         self.user_data = DictInfo()

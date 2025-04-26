@@ -1,9 +1,9 @@
 from cgfx import CGFX
-from cmdl import CMDL, CMDLWithSkeleton, GraphicsAnimationGroup, AnimationGroupMember
+from cmdl import CMDL, CMDLWithSkeleton, GraphicsAnimationGroup, AnimationGroupMember, AnimationGroupMemberType
 from shared import StringTable, Vector3
 from txob import ImageTexture, PixelBasedImage, ReferenceTexture
-from sobj import SOBJMesh, SOBJShape, SOBJSkeleton, Bone
-from primitives import Primitive, PrimitiveSet, InterleavedVertexStream, IndexStream, VertexStream
+from sobj import SOBJMesh, SOBJShape, SOBJSkeleton, Bone, BillboardMode
+from primitives import Primitive, PrimitiveSet, InterleavedVertexStream, IndexStream, VertexStream, VertexAttributeUsage, VertexAttributeFlags, DataType
 from mtob import MTOB, ColorFloat, TexInfo, PicaCommand, LinkedShader
 import swizzler
 from PIL import Image
@@ -32,7 +32,7 @@ def make_demo_cgfx() -> CGFX:
 
     banner = AnimationGroupMember()
     skeletal_animation.members.add('banner', banner)
-    banner.type = 0x40000000
+    banner.type = AnimationGroupMemberType.Bone
     banner.path = 'banner'
     banner.member = 'banner'
     banner.subtype = 0
@@ -46,7 +46,7 @@ def make_demo_cgfx() -> CGFX:
 
     is_visible = AnimationGroupMember()
     visibility_animation.members.add('IsVisible', is_visible)
-    is_visible.type = 0x10000000
+    is_visible.type = AnimationGroupMemberType.Model
     is_visible.path = 'IsVisible'
     is_visible.object_type = 212
     is_visible.member_type = 1
@@ -55,7 +55,7 @@ def make_demo_cgfx() -> CGFX:
 
     meshes_zero_is_visible = AnimationGroupMember()
     visibility_animation.members.add('Meshes[0].IsVisible', meshes_zero_is_visible)
-    meshes_zero_is_visible.type = 0x1000000
+    meshes_zero_is_visible.type = AnimationGroupMemberType.Mesh
     meshes_zero_is_visible.path = 'Meshes[0].IsVisible'
     meshes_zero_is_visible.member = '0'
     meshes_zero_is_visible.object_type = 36
@@ -74,7 +74,7 @@ def make_demo_cgfx() -> CGFX:
     
     member = AnimationGroupMember()
     material_animation.members.add('Materials["mt_banner"].MaterialColor.Emission', member)
-    member.type = 0x8000000
+    member.type = AnimationGroupMemberType.MaterialColor
     member.path = 'Materials["mt_banner"].MaterialColor.Emission'
     member.member = 'mt_banner'
     member.blend_operation_index = 'MaterialColor'
@@ -85,7 +85,7 @@ def make_demo_cgfx() -> CGFX:
     
     member = AnimationGroupMember()
     material_animation.members.add('Materials["mt_banner"].MaterialColor.Ambient', member)
-    member.type = 0x8000000
+    member.type = AnimationGroupMemberType.MaterialColor
     member.path = 'Materials["mt_banner"].MaterialColor.Ambient'
     member.member = 'mt_banner'
     member.blend_operation_index = 'MaterialColor'
@@ -97,7 +97,7 @@ def make_demo_cgfx() -> CGFX:
     
     member = AnimationGroupMember()
     material_animation.members.add('Materials["mt_banner"].MaterialColor.Diffuse', member)
-    member.type = 0x8000000
+    member.type = AnimationGroupMemberType.MaterialColor
     member.path = 'Materials["mt_banner"].MaterialColor.Diffuse'
     member.member = 'mt_banner'
     member.blend_operation_index = 'MaterialColor'
@@ -109,7 +109,7 @@ def make_demo_cgfx() -> CGFX:
     
     member = AnimationGroupMember()
     material_animation.members.add('Materials["mt_banner"].MaterialColor.Specular0', member)
-    member.type = 0x8000000
+    member.type = AnimationGroupMemberType.MaterialColor
     member.path = 'Materials["mt_banner"].MaterialColor.Specular0'
     member.member = 'mt_banner'
     member.blend_operation_index = 'MaterialColor'
@@ -121,7 +121,7 @@ def make_demo_cgfx() -> CGFX:
     
     member = AnimationGroupMember()
     material_animation.members.add('Materials["mt_banner"].MaterialColor.Specular1', member)
-    member.type = 0x8000000
+    member.type = AnimationGroupMemberType.MaterialColor
     member.path = 'Materials["mt_banner"].MaterialColor.Specular1'
     member.member = 'mt_banner'
     member.blend_operation_index = 'MaterialColor'
@@ -133,7 +133,7 @@ def make_demo_cgfx() -> CGFX:
     
     member = AnimationGroupMember()
     material_animation.members.add('Materials["mt_banner"].MaterialColor.Constant0', member)
-    member.type = 0x8000000
+    member.type = AnimationGroupMemberType.MaterialColor
     member.path = 'Materials["mt_banner"].MaterialColor.Constant0'
     member.member = 'mt_banner'
     member.blend_operation_index = 'MaterialColor'
@@ -145,7 +145,7 @@ def make_demo_cgfx() -> CGFX:
     
     member = AnimationGroupMember()
     material_animation.members.add('Materials["mt_banner"].MaterialColor.Constant1', member)
-    member.type = 0x8000000
+    member.type = AnimationGroupMemberType.MaterialColor
     member.path = 'Materials["mt_banner"].MaterialColor.Constant1'
     member.member = 'mt_banner'
     member.blend_operation_index = 'MaterialColor'
@@ -157,7 +157,7 @@ def make_demo_cgfx() -> CGFX:
     
     member = AnimationGroupMember()
     material_animation.members.add('Materials["mt_banner"].MaterialColor.Constant2', member)
-    member.type = 0x8000000
+    member.type = AnimationGroupMemberType.MaterialColor
     member.path = 'Materials["mt_banner"].MaterialColor.Constant2'
     member.member = 'mt_banner'
     member.blend_operation_index = 'MaterialColor'
@@ -169,7 +169,7 @@ def make_demo_cgfx() -> CGFX:
     
     member = AnimationGroupMember()
     material_animation.members.add('Materials["mt_banner"].MaterialColor.Constant3', member)
-    member.type = 0x8000000
+    member.type = AnimationGroupMemberType.MaterialColor
     member.path = 'Materials["mt_banner"].MaterialColor.Constant3'
     member.member = 'mt_banner'
     member.blend_operation_index = 'MaterialColor'
@@ -181,7 +181,7 @@ def make_demo_cgfx() -> CGFX:
     
     member = AnimationGroupMember()
     material_animation.members.add('Materials["mt_banner"].MaterialColor.Constant4', member)
-    member.type = 0x8000000
+    member.type = AnimationGroupMemberType.MaterialColor
     member.path = 'Materials["mt_banner"].MaterialColor.Constant4'
     member.member = 'mt_banner'
     member.blend_operation_index = 'MaterialColor'
@@ -193,7 +193,7 @@ def make_demo_cgfx() -> CGFX:
     
     member = AnimationGroupMember()
     material_animation.members.add('Materials["mt_banner"].MaterialColor.Constant5', member)
-    member.type = 0x8000000
+    member.type = AnimationGroupMemberType.MaterialColor
     member.path = 'Materials["mt_banner"].MaterialColor.Constant5'
     member.member = 'mt_banner'
     member.blend_operation_index = 'MaterialColor'
@@ -205,7 +205,7 @@ def make_demo_cgfx() -> CGFX:
     
     member = AnimationGroupMember()
     material_animation.members.add('Materials["mt_banner"].TextureMappers[0].Sampler.BorderColor', member)
-    member.type = 0x2000000
+    member.type = AnimationGroupMemberType.TextureSampler
     member.path = 'Materials["mt_banner"].TextureMappers[0].Sampler.BorderColor'
     member.member = 'mt_banner'
     member.blend_operation_index = 'TextureMappers[0].Sampler'
@@ -217,7 +217,7 @@ def make_demo_cgfx() -> CGFX:
     
     member = AnimationGroupMember()
     material_animation.members.add('Materials["mt_banner"].TextureMappers[0].Texture', member)
-    member.type = 0x20000000
+    member.type = AnimationGroupMemberType.TextureMapper
     member.path = 'Materials["mt_banner"].TextureMappers[0].Texture'
     member.member = 'mt_banner'
     member.blend_operation_index = 'TextureMappers[0]'
@@ -230,7 +230,7 @@ def make_demo_cgfx() -> CGFX:
     
     member = AnimationGroupMember()
     material_animation.members.add('Materials["mt_banner"].FragmentOperation.BlendOperation.BlendColor', member)
-    member.type = 0x4000000
+    member.type = AnimationGroupMemberType.BlendOperation
     member.path = 'Materials["mt_banner"].FragmentOperation.BlendOperation.BlendColor'
     member.member = 'mt_banner'
     member.blend_operation_index = 'FragmentOperation.BlendOperation'
@@ -242,7 +242,7 @@ def make_demo_cgfx() -> CGFX:
     
     member = AnimationGroupMember()
     material_animation.members.add('Materials["mt_banner"].TextureCoordinators[0].Scale', member)
-    member.type = 0x80000000
+    member.type = AnimationGroupMemberType.TextureCoordinator
     member.path = 'Materials["mt_banner"].FragmentOperation.TextureCoordinators[0].Scale'
     member.member = 'mt_banner'
     member.blend_operation_index = 'TextureCoordinators[0]'
@@ -255,7 +255,7 @@ def make_demo_cgfx() -> CGFX:
     
     member = AnimationGroupMember()
     material_animation.members.add('Materials["mt_banner"].TextureCoordinators[0].Rotate', member)
-    member.type = 0x80000000
+    member.type = AnimationGroupMemberType.TextureCoordinator
     member.path = 'Materials["mt_banner"].FragmentOperation.TextureCoordinators[0].Rotate'
     member.member = 'mt_banner'
     member.blend_operation_index = 'TextureCoordinators[0]'
@@ -268,7 +268,7 @@ def make_demo_cgfx() -> CGFX:
     
     member = AnimationGroupMember()
     material_animation.members.add('Materials["mt_banner"].TextureCoordinators[0].Translate', member)
-    member.type = 0x80000000
+    member.type = AnimationGroupMemberType.TextureCoordinator
     member.path = 'Materials["mt_banner"].FragmentOperation.TextureCoordinators[0].Translate'
     member.member = 'mt_banner'
     member.blend_operation_index = 'TextureCoordinators[0]'
@@ -297,7 +297,7 @@ def make_demo_cgfx() -> CGFX:
     
     index_stream = IndexStream()
     primitive.index_streams.add(index_stream)
-    index_stream.data_type = 0x1401
+    index_stream.data_type = DataType.UByte
     index_stream.primitive_mode = 0
     index_stream.is_invisible = True
     index_stream.face_data = bytes([0, 1, 2, 1, 3, 2])
@@ -306,8 +306,8 @@ def make_demo_cgfx() -> CGFX:
     
     interleaved_vertex_stream = InterleavedVertexStream()
     shape.vertex_attributes.add(interleaved_vertex_stream)
-    interleaved_vertex_stream.usage = 0x15
-    interleaved_vertex_stream.flags = 2
+    interleaved_vertex_stream.usage = VertexAttributeUsage.Interlave
+    interleaved_vertex_stream.flags = VertexAttributeFlags.Interleave
     interleaved_vertex_stream.vertex_data_entry_size = 20
     interleaved_vertex_stream.vertex_stream_data = bytes([
         0x00, 0x00, 0x50, 0xC1, 0x00, 0x00, 0xF0, 0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
@@ -319,17 +319,17 @@ def make_demo_cgfx() -> CGFX:
 
     position_stream = VertexStream()
     interleaved_vertex_stream.vertex_streams.add(position_stream)
-    position_stream.usage = 0
+    position_stream.usage = VertexAttributeUsage.Position
     position_stream.flags = 0
-    position_stream.format_type = 0x1406
+    position_stream.format_type = DataType.Float
     position_stream.components_count = 3
     position_stream.vert_offset = 0
 
     texcoord_stream = VertexStream()
     interleaved_vertex_stream.vertex_streams.add(texcoord_stream)
-    texcoord_stream.usage = 4
+    texcoord_stream.usage = VertexAttributeUsage.TextureCoordinate0
     texcoord_stream.flags = 0
-    texcoord_stream.format_type = 0x1406
+    texcoord_stream.format_type = DataType.Float
     texcoord_stream.components_count = 2
     texcoord_stream.vert_offset = 12
 
@@ -344,7 +344,7 @@ def make_demo_cgfx() -> CGFX:
     bone.position = Vector3(0, 1, 0)
     bone.local.columns[1].w = 1
     bone.inverse_base.columns[1].w = -1
-    bone.billboard_mode = 5
+    bone.billboard_mode = BillboardMode.ScreenViewpoint
 
     mtob = MTOB()
     cmdl.materials.add('mt_banner', mtob)

@@ -1,9 +1,9 @@
 from shared import StandardObject, Signature, Reference
 from dict import DictInfo
 from struct import Struct
-import enum
+from enum import IntEnum
 
-class TextureFormat(enum.IntEnum):
+class TextureFormat(IntEnum):
     RGBA8 = 0 # Broken on 3DS home menu - do not use
     RGB8 = 1
     RGBA5551 = 2

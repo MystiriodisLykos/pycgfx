@@ -1,9 +1,45 @@
 from shared import StandardObject, List
 from struct import Struct
+from enum import IntEnum, IntFlag
+
+class DataType(IntEnum):
+    Byte = 0x1400
+    UByte = 0x1401
+    Short = 0x1402
+    Float = 0x1406
+
+class VertexAttributeUsage(IntEnum):
+    Position = 0
+    Normal = 1
+    Tangent = 2
+    Color = 3
+    TextureCoordinate0 = 4
+    TextureCoordinate1 = 5
+    TextureCoordinate2 = 6
+    BoneIndex = 7
+    BoneWeight = 8
+    UserAttribute0 = 9
+    UserAttribute1 = 10
+    UserAttribute2 = 11
+    UserAttribute3 = 12
+    UserAttribute4 = 13
+    UserAttribute5 = 14
+    UserAttribute6 = 15
+    UserAttribute7 = 16
+    UserAttribute8 = 17
+    UserAttribute9 = 18
+    UserAttribute10 = 19
+    UserAttribute11 = 20
+    Interlave = 21
+    Quantity = 22
+
+class VertexAttributeFlags(IntFlag):
+    VertexParam = 1
+    Interleave = 2
 
 class IndexStream(StandardObject):
     struct = Struct('ib?xxiiiiiiiii')
-    data_type = 0x1401
+    data_type = DataType.UByte
     primitive_mode = 0
     is_invisible = False
     face_data: b''
@@ -47,8 +83,8 @@ class PrimitiveSet(StandardObject):
 
 class VertexAttribute(StandardObject):
     type: int
-    usage = 0
-    flags = 0
+    usage = VertexAttributeUsage.Position
+    flags = VertexAttributeFlags(0)
 
 class InterleavedVertexStream(VertexAttribute):
     # padding is written to at runtime
@@ -75,7 +111,7 @@ class VertexStream(VertexAttribute):
     vertex_stream_data = b''
     location_address = 0
     memory_area = 0
-    format_type = 0
+    format_type = DataType.Float
     components_count = 0
     scale = 1
     vert_offset = 0
@@ -87,7 +123,7 @@ class VertexStream(VertexAttribute):
 class VertexParamAttribute(VertexAttribute):
     struct = Struct('iiiiifii')
     type = 0x80000000
-    format_type = 0
+    format_type = DataType.Float
     components_count = 0
     scale = 0
     attributes: List[float]

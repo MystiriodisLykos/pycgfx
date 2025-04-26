@@ -3,7 +3,19 @@ from shared import Signature, StandardObject, Vector3, Vector4, Matrix, List
 from sobj import SOBJMesh, SOBJShape, SOBJSkeleton
 from struct import Struct
 from mtob import MTOB
+from enum import IntEnum
 
+
+class AnimationGroupMemberType(IntEnum):
+    MeshNodeVisibility = 0x00080000
+    Mesh = 0x01000000
+    TextureSampler = 0x02000000
+    BlendOperation = 0x04000000
+    MaterialColor = 0x08000000
+    Model = 0x10000000
+    TextureMapper = 0x20000000
+    Bone = 0x40000000,
+    TextureCoordinator = 0x80000000
 
 class AnimationGroupMember(StandardObject):
     type = 0
