@@ -1,6 +1,32 @@
 from shared import StandardObject, Signature, Reference
 from dict import DictInfo
 from struct import Struct
+import enum
+
+class TextureFormat(enum.IntEnum):
+    RGBA8 = 0 # Broken on 3DS home menu - do not use
+    RGB8 = 1
+    RGBA5551 = 2
+    RGB565 = 3
+    RGBA4 = 4
+    LA8 = 5
+    HILO8 = 6
+    L8 = 7
+    A8 = 8
+    LA4 = 9
+    L4 = 10
+    A4 = 11
+    ETC1 = 12
+    ETC1A4 = 13
+
+    def bytes_per_pixel(self):
+        match self:
+            case self.RGBA8: return 4
+            case self.RGB8: return 3
+            case f if f >= self.RGBA5551 and f <= self.HILO8: return 2
+            case self.L8 | self.A8 | self.LA4: return 1
+            case self.L4 | self.A4: return 0.5
+            # TODO ETC1 / ETC1A4
 
 class TXOB(StandardObject):
     struct = Struct('i4siiii')
@@ -30,11 +56,11 @@ class PixelBasedTexture(TXOB):
     struct = Struct(TXOB.struct.format + 'iiiiixxxxii')
     height = 0
     width = 0
-    gl_format = 0
-    gl_type = 0
+    gl_format = 0 # unused
+    gl_type = 0 # unused
     mipmap_level_count = 0
     location_flag = 0
-    hw_format = 0
+    hw_format = TextureFormat.RGBA4
     def values(self):
         return (*super().values(), self.height, self.width, self.gl_format, self.gl_type,
             self.mipmap_level_count, self.location_flag, self.hw_format)
@@ -45,7 +71,7 @@ class PixelBasedImage(StandardObject):
     width = 0
     data = b''
     dynamic_allocator = 0
-    bits_per_pixel = 0
+    bits_per_pixel = 0 # unused
     location_address = 0
     memory_address = 0
     def values(self):
