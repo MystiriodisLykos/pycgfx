@@ -90,6 +90,7 @@ class InterleavedVertexStream(VertexAttribute):
     # padding is written to at runtime
     struct = Struct('iiixxxxiiiiiiii')
     type = 0x40000002
+    flags = VertexAttributeFlags.Interleave
     location_flag = 0
     vertex_stream_data = b''
     location_address = 0
@@ -123,6 +124,7 @@ class VertexStream(VertexAttribute):
 class VertexParamAttribute(VertexAttribute):
     struct = Struct('iiiiifii')
     type = 0x80000000
+    flags = VertexAttributeFlags.VertexParam
     format_type = DataType.Float
     components_count = 0
     scale = 0

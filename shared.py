@@ -24,7 +24,9 @@ class StringTable:
         if isinstance(s, str):
             return s.encode() + b'\0'
         else:
-            return s + b'\0' * (-len(s) % 8)
+            # textures are aligned to 16 bytes
+            # vertex buffers aren't but aligning everything is easier
+            return s + b'\0' * (-len(s) % 16)
         return s
 
     def add(self, s: bytes | str):
@@ -35,7 +37,7 @@ class StringTable:
 
     def prepare(self, offset: int) -> int:
         self.offset = offset
-        self.padding = -self.total % 8
+        self.padding = -(offset + self.total) % 8
         self.total += self.padding
         return offset + self.total
     
