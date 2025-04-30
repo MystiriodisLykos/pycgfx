@@ -37,7 +37,8 @@ class StringTable:
 
     def prepare(self, offset: int) -> int:
         self.offset = offset
-        self.padding = -(offset + self.total) % 8
+        self.padding = -(offset + self.total) % 16
+        self.padding ^= 8 # align content to 16, aka header to halfway through
         self.total += self.padding
         return offset + self.total
     
@@ -188,7 +189,7 @@ class ListData(StandardObject, Generic[T]):
         self.struct = struct.Struct('i' * len(self.contents))
     def values(self) -> tuple:
         return tuple(self.contents)
-    def len(self):
+    def __len__(self):
         return len(self.contents)
     def add(self, value: T):
         self.contents.append(value)
@@ -201,9 +202,11 @@ class List(InlineObject, Generic[T]):
     def refresh_struct(self):
         self.struct = struct.Struct('ii')
     def values(self) -> tuple:
-        return (self.data.len(), self.data if self.data.len() else None)
+        return (len(self.data), self.data if len(self.data) else None)
     def add(self, value: T):
         self.data.add(value)
+    def __len__(self):
+        return len(self.data)
 
 class Vector3(InlineObject):
     struct = struct.Struct('fff')

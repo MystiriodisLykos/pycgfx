@@ -41,7 +41,7 @@ def swizzle(im: Image, format: TextureFormat) -> bytes:
             output += tile
     return output
 
-def to_txob(im: Image, format: TextureFormat = TextureFormat.RGBA4, mipmaps = 1) -> PixelBasedImage:
+def to_txob(im: Image, format: TextureFormat = TextureFormat.RGBA4, mipmaps = 1) -> ImageTexture:
     txob = ImageTexture()
     txob.width = txob.pixel_based_image.width = im.width
     txob.height = txob.pixel_based_image.height = im.height

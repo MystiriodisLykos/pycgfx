@@ -42,6 +42,22 @@ class DICT(StandardObject, Generic[T]):
 
     def len(self):
         return len(self.nodes) - 1
+
+    def get(self, name: str) -> T:
+        # could be smarter but eh
+        for n in self.nodes:
+            if n.name == name:
+                return n.content
+        return None
+
+    def __iter__(self):
+        for n in self.nodes[1:]:
+            yield n.name
+    
+    def get_index(self, name: str) -> int:
+        for i in range(len(self.nodes)):
+            if self.nodes[i].name == name:
+                return i - 1
     
     def add(self, name: str, data: T):
         self.nodes.append(Node(name, data))
@@ -67,3 +83,9 @@ class DictInfo(InlineObject, Generic[T]):
         return (self.dict.len(), self.dict if self.dict.len() else None)
     def add(self, name: str, data: T):
         self.dict.add(name, data)
+    def get(self, name: str) -> T:
+        return self.dict.get(name)
+    def __iter__(self):
+        return iter(self.dict)
+    def get_index(self, name: str) -> int:
+        return self.dict.get_index(name)

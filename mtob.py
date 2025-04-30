@@ -41,7 +41,7 @@ class ColorByte(Color):
 class ColorFloat(Color):
     struct = Struct('ffff')
     def as_byte(self) -> ColorByte:
-        return ColorByte(self.r * 255, self.g * 255, self.b * 255, self.a * 255)
+        return ColorByte(int(self.r * 255), int(self.g * 255), int(self.b * 255), int(self.a * 255))
 
 class PicaCommand(InlineObject):
     struct = Struct('II')

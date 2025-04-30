@@ -41,7 +41,7 @@ class IndexStream(StandardObject):
     struct = Struct('ib?xxiiiiiiiii')
     data_type = DataType.UByte
     primitive_mode = 0
-    is_invisible = False
+    visible = True
     face_data: b''
     buffer_object = 0
     location_flag = 0
@@ -52,7 +52,7 @@ class IndexStream(StandardObject):
     memory_area = 0
     bounding_box_offset = 0
     def values(self) -> tuple:
-        return (self.data_type, self.primitive_mode, self.is_invisible, self.face_data,
+        return (self.data_type, self.primitive_mode, self.visible, self.face_data,
         self.buffer_object, self.location_flag, self.command_cache, self.command_cache_size,
         self.location_address, self.memory_area, self.bounding_box_offset)
 
