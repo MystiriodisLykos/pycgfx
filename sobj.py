@@ -17,13 +17,17 @@ class SkeletonScalingRule(IntEnum):
     SoftImage = 2
 
 class BillboardMode(IntEnum):
+    # When the non-viewpoint modes are in use, the bone always faces the camera identically.
+    # With a viewpoint mode, the bone may appear to tilt as it moves towards the side.
+    # Other than that, the true meaning of these modes is unclear, despite obvious
+    # mathematical differences.
     Off = 0
-    World = 2
-    WorldViewpoint = 3
-    Screen = 4
-    ScreenViewpoint = 5
-    YAxial = 6
-    YAxialViewpoint = 7
+    World = 1
+    WorldViewpoint = 2
+    Screen = 3
+    ScreenViewpoint = 4
+    YAxial = 5
+    YAxialViewpoint = 6
 
 class SOBJMesh(StandardObject):
     # padding is used at runtime
@@ -71,6 +75,7 @@ class SOBJShape(StandardObject):
     user_data: DictInfo
     # flags are modified at runtime
     flags = 0
+    # the bounding box is unused, it gets read but nothing is done with it
     oriented_bounding_box: OrientedBoundingBox
     position_offset: Vector3
     primitive_sets: List[PrimitiveSet]

@@ -18,28 +18,31 @@ class AnimationGroupMemberType(IntEnum):
     TextureCoordinator = 0x80000000
 
 class AnimationGroupMember(StandardObject):
-    type = 0
+    # these names mainly apply to material members, not sure how others work
+    # this is sort of accessing a hierarchy, so here's the naming convention:
+    # object has fields, and those have values
+    object_type = AnimationGroupMemberType.Mesh
     path: str = None
     member: str = None
     blend_operation_index: str = None
-    object_type = 0
-    member_type = 0
-    res_material_ptr = 0
-    subtype = 0
-    some_bool = 0
-    string = ''
-    tex_mapper = 0
-    number = 0
+    value_offset = 0
+    value_size = 0
+    unknown = 0
+    field_type = 0
+    value_index = 0
+    parent_name = ''
+    field_index = 0
+    parent_index = 0
     def refresh_struct(self):
         # padding is used at runtime
         fmt = 'Iiiiiiiiixxxxi'
-        if self.subtype <= 5:
+        if self.field_type <= 5:
             fmt += 'i'
         self.struct = Struct(fmt)
     def values(self):
-        return (self.type, self.path, self.member, self.blend_operation_index,
-            self.object_type, self.member_type, self.res_material_ptr, self.subtype,
-            self.some_bool) + ((self.string, self.tex_mapper) if self.subtype <= 5 else (self.number,))
+        return (self.object_type, self.path, self.member, self.blend_operation_index,
+            self.value_offset, self.value_size, self.unknown, self.field_type,
+            self.value_index) + ((self.parent_name, self.field_index) if self.field_type <= 5 else (self.parent_index,))
     
 
 class GraphicsAnimationGroup(StandardObject):
@@ -65,8 +68,8 @@ class CMDL(StandardObject):
     revision = 0x7000000
     name = ''
     user_data: DictInfo
-    flags = 1
-    branch_visible = False
+    flags = 1 # looks transform-related, specific meaning unknown
+    branch_visible = False # unused
     nr_children = 0
     animation_group_descriptions: DictInfo[GraphicsAnimationGroup]
     scale: Vector3
@@ -78,7 +81,7 @@ class CMDL(StandardObject):
     materials: DictInfo[MTOB]
     shapes: List[SOBJShape]
     mesh_nodes: DictInfo
-    flags2 = 0
+    visible = True
     cull_mode = 0
     layer_id = 0
     def __init__(self) -> None:
@@ -98,7 +101,7 @@ class CMDL(StandardObject):
         return (self.type, self.signature, self.revision, self.name, self.user_data,
                 self.flags, self.branch_visible, self.nr_children, self.animation_group_descriptions,
                 self.scale, self.rotation, self.translation, self.local, self.world,
-                self.meshes, self.materials, self.shapes, self.mesh_nodes, self.flags2, self.cull_mode, self.layer_id)
+                self.meshes, self.materials, self.shapes, self.mesh_nodes, self.visible, self.cull_mode, self.layer_id)
 
 class CMDLWithSkeleton(CMDL):
     struct = Struct(CMDL.struct.format + 'i')

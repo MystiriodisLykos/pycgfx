@@ -62,7 +62,7 @@ class Primitive(StandardObject):
     index_streams: List[IndexStream]
     # buffer objects are written to at runtime, but are allocated in advance
     buffer_objects: List[int]
-    flags = 0
+    flags = 0 # appears unused
     command_allocator = 0
     def __init__(self):
         self.index_streams = List()

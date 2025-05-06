@@ -11,210 +11,210 @@ from PIL import Image
 def make_material_animation(material_animation: GraphicsAnimationGroup, mat_name: str):
     member = AnimationGroupMember()
     material_animation.members.add(f'Materials["{mat_name}"].MaterialColor.Emission', member)
-    member.type = AnimationGroupMemberType.MaterialColor
+    member.object_type = AnimationGroupMemberType.MaterialColor
     member.path = f'Materials["{mat_name}"].MaterialColor.Emission'
     member.member = mat_name
     member.blend_operation_index = 'MaterialColor'
-    member.object_type = 16 * 0
-    member.member_type = 16
-    member.subtype = 1
-    member.string = mat_name
+    member.value_offset = 16 * 0
+    member.value_size = 16
+    member.field_type = 1
+    member.parent_name = mat_name
     
     member = AnimationGroupMember()
     material_animation.members.add(f'Materials["{mat_name}"].MaterialColor.Ambient', member)
-    member.type = AnimationGroupMemberType.MaterialColor
+    member.object_type = AnimationGroupMemberType.MaterialColor
     member.path = f'Materials["{mat_name}"].MaterialColor.Ambient'
     member.member = mat_name
     member.blend_operation_index = 'MaterialColor'
-    member.object_type = 16 * 1
-    member.member_type = 16
-    member.subtype = 1
-    member.some_bool = 1
-    member.string = mat_name
+    member.value_offset = 16 * 1
+    member.value_size = 16
+    member.field_type = 1
+    member.value_index = 1
+    member.parent_name = mat_name
     
     member = AnimationGroupMember()
     material_animation.members.add(f'Materials["{mat_name}"].MaterialColor.Diffuse', member)
-    member.type = AnimationGroupMemberType.MaterialColor
+    member.object_type = AnimationGroupMemberType.MaterialColor
     member.path = f'Materials["{mat_name}"].MaterialColor.Diffuse'
     member.member = mat_name
     member.blend_operation_index = 'MaterialColor'
-    member.object_type = 16 * 2
-    member.member_type = 16
-    member.subtype = 1
-    member.some_bool = 2
-    member.string = mat_name
+    member.value_offset = 16 * 2
+    member.value_size = 16
+    member.field_type = 1
+    member.value_index = 2
+    member.parent_name = mat_name
     
     member = AnimationGroupMember()
     material_animation.members.add(f'Materials["{mat_name}"].MaterialColor.Specular0', member)
-    member.type = AnimationGroupMemberType.MaterialColor
+    member.object_type = AnimationGroupMemberType.MaterialColor
     member.path = f'Materials["{mat_name}"].MaterialColor.Specular0'
     member.member = mat_name
     member.blend_operation_index = 'MaterialColor'
-    member.object_type = 16 * 3
-    member.member_type = 16
-    member.subtype = 1
-    member.some_bool = 3
-    member.string = mat_name
+    member.value_offset = 16 * 3
+    member.value_size = 16
+    member.field_type = 1
+    member.value_index = 3
+    member.parent_name = mat_name
     
     member = AnimationGroupMember()
     material_animation.members.add(f'Materials["{mat_name}"].MaterialColor.Specular1', member)
-    member.type = AnimationGroupMemberType.MaterialColor
+    member.object_type = AnimationGroupMemberType.MaterialColor
     member.path = f'Materials["{mat_name}"].MaterialColor.Specular1'
     member.member = mat_name
     member.blend_operation_index = 'MaterialColor'
-    member.object_type = 16 * 4
-    member.member_type = 16
-    member.subtype = 1
-    member.some_bool = 4
-    member.string = mat_name
+    member.value_offset = 16 * 4
+    member.value_size = 16
+    member.field_type = 1
+    member.value_index = 4
+    member.parent_name = mat_name
     
     member = AnimationGroupMember()
     material_animation.members.add(f'Materials["{mat_name}"].MaterialColor.Constant0', member)
-    member.type = AnimationGroupMemberType.MaterialColor
+    member.object_type = AnimationGroupMemberType.MaterialColor
     member.path = f'Materials["{mat_name}"].MaterialColor.Constant0'
     member.member = mat_name
     member.blend_operation_index = 'MaterialColor'
-    member.object_type = 16 * 5
-    member.member_type = 16
-    member.subtype = 1
-    member.some_bool = 5
-    member.string = mat_name
+    member.value_offset = 16 * 5
+    member.value_size = 16
+    member.field_type = 1
+    member.value_index = 5
+    member.parent_name = mat_name
     
     member = AnimationGroupMember()
     material_animation.members.add(f'Materials["{mat_name}"].MaterialColor.Constant1', member)
-    member.type = AnimationGroupMemberType.MaterialColor
+    member.object_type = AnimationGroupMemberType.MaterialColor
     member.path = f'Materials["{mat_name}"].MaterialColor.Constant1'
     member.member = mat_name
     member.blend_operation_index = 'MaterialColor'
-    member.object_type = 16 * 6
-    member.member_type = 16
-    member.subtype = 1
-    member.some_bool = 6
-    member.string = mat_name
+    member.value_offset = 16 * 6
+    member.value_size = 16
+    member.field_type = 1
+    member.value_index = 6
+    member.parent_name = mat_name
     
     member = AnimationGroupMember()
     material_animation.members.add(f'Materials["{mat_name}"].MaterialColor.Constant2', member)
-    member.type = AnimationGroupMemberType.MaterialColor
+    member.object_type = AnimationGroupMemberType.MaterialColor
     member.path = f'Materials["{mat_name}"].MaterialColor.Constant2'
     member.member = mat_name
     member.blend_operation_index = 'MaterialColor'
-    member.object_type = 16 * 7
-    member.member_type = 16
-    member.subtype = 1
-    member.some_bool = 7
-    member.string = mat_name
+    member.value_offset = 16 * 7
+    member.value_size = 16
+    member.field_type = 1
+    member.value_index = 7
+    member.parent_name = mat_name
     
     member = AnimationGroupMember()
     material_animation.members.add(f'Materials["{mat_name}"].MaterialColor.Constant3', member)
-    member.type = AnimationGroupMemberType.MaterialColor
+    member.object_type = AnimationGroupMemberType.MaterialColor
     member.path = f'Materials["{mat_name}"].MaterialColor.Constant3'
     member.member = mat_name
     member.blend_operation_index = 'MaterialColor'
-    member.object_type = 16 * 8
-    member.member_type = 16
-    member.subtype = 1
-    member.some_bool = 8
-    member.string = mat_name
+    member.value_offset = 16 * 8
+    member.value_size = 16
+    member.field_type = 1
+    member.value_index = 8
+    member.parent_name = mat_name
     
     member = AnimationGroupMember()
     material_animation.members.add(f'Materials["{mat_name}"].MaterialColor.Constant4', member)
-    member.type = AnimationGroupMemberType.MaterialColor
+    member.object_type = AnimationGroupMemberType.MaterialColor
     member.path = f'Materials["{mat_name}"].MaterialColor.Constant4'
     member.member = mat_name
     member.blend_operation_index = 'MaterialColor'
-    member.object_type = 16 * 9
-    member.member_type = 16
-    member.subtype = 1
-    member.some_bool = 9
-    member.string = mat_name
+    member.value_offset = 16 * 9
+    member.value_size = 16
+    member.field_type = 1
+    member.value_index = 9
+    member.parent_name = mat_name
     
     member = AnimationGroupMember()
     material_animation.members.add(f'Materials["{mat_name}"].MaterialColor.Constant5', member)
-    member.type = AnimationGroupMemberType.MaterialColor
+    member.object_type = AnimationGroupMemberType.MaterialColor
     member.path = f'Materials["{mat_name}"].MaterialColor.Constant5'
     member.member = mat_name
     member.blend_operation_index = 'MaterialColor'
-    member.object_type = 16 * 10
-    member.member_type = 16
-    member.subtype = 1
-    member.some_bool = 10
-    member.string = mat_name
+    member.value_offset = 16 * 10
+    member.value_size = 16
+    member.field_type = 1
+    member.value_index = 10
+    member.parent_name = mat_name
     
     member = AnimationGroupMember()
     material_animation.members.add(f'Materials["{mat_name}"].TextureMappers[0].Sampler.BorderColor', member)
-    member.type = AnimationGroupMemberType.TextureSampler
+    member.object_type = AnimationGroupMemberType.TextureSampler
     member.path = f'Materials["{mat_name}"].TextureMappers[0].Sampler.BorderColor'
     member.member = mat_name
     member.blend_operation_index = 'TextureMappers[0].Sampler'
-    member.object_type = 12
-    member.member_type = 16
-    member.subtype = 2
-    member.some_bool = 0
-    member.string = mat_name
+    member.value_offset = 12
+    member.value_size = 16
+    member.field_type = 2
+    member.value_index = 0
+    member.parent_name = mat_name
     
     member = AnimationGroupMember()
     material_animation.members.add(f'Materials["{mat_name}"].TextureMappers[0].Texture', member)
-    member.type = AnimationGroupMemberType.TextureMapper
+    member.object_type = AnimationGroupMemberType.TextureMapper
     member.path = f'Materials["{mat_name}"].TextureMappers[0].Texture'
     member.member = mat_name
     member.blend_operation_index = 'TextureMappers[0]'
-    member.object_type = 8
-    member.member_type = 4
-    member.res_material_ptr = 1
-    member.subtype = 3
-    member.some_bool = 0
-    member.string = mat_name
+    member.value_offset = 8
+    member.value_size = 4
+    member.unknown = 1
+    member.field_type = 3
+    member.value_index = 0
+    member.parent_name = mat_name
     
     member = AnimationGroupMember()
     material_animation.members.add(f'Materials["{mat_name}"].FragmentOperation.BlendOperation.BlendColor', member)
-    member.type = AnimationGroupMemberType.BlendOperation
+    member.object_type = AnimationGroupMemberType.BlendOperation
     member.path = f'Materials["{mat_name}"].FragmentOperation.BlendOperation.BlendColor'
     member.member = mat_name
     member.blend_operation_index = 'FragmentOperation.BlendOperation'
-    member.object_type = 4
-    member.member_type = 16
-    member.subtype = 4
-    member.some_bool = 0
-    member.string = mat_name
+    member.value_offset = 4
+    member.value_size = 16
+    member.field_type = 4
+    member.value_index = 0
+    member.parent_name = mat_name
     
     member = AnimationGroupMember()
     material_animation.members.add(f'Materials["{mat_name}"].TextureCoordinators[0].Scale', member)
-    member.type = AnimationGroupMemberType.TextureCoordinator
+    member.object_type = AnimationGroupMemberType.TextureCoordinator
     member.path = f'Materials["{mat_name}"].FragmentOperation.TextureCoordinators[0].Scale'
     member.member = mat_name
     member.blend_operation_index = 'TextureCoordinators[0]'
-    member.object_type = 16
-    member.member_type = 8
-    member.res_material_ptr = 2
-    member.subtype = 5
-    member.some_bool = 0
-    member.string = mat_name
+    member.value_offset = 16
+    member.value_size = 8
+    member.unknown = 2
+    member.field_type = 5
+    member.value_index = 0
+    member.parent_name = mat_name
     
     member = AnimationGroupMember()
     material_animation.members.add(f'Materials["{mat_name}"].TextureCoordinators[0].Rotate', member)
-    member.type = AnimationGroupMemberType.TextureCoordinator
+    member.object_type = AnimationGroupMemberType.TextureCoordinator
     member.path = f'Materials["{mat_name}"].FragmentOperation.TextureCoordinators[0].Rotate'
     member.member = mat_name
     member.blend_operation_index = 'TextureCoordinators[0]'
-    member.object_type = 24
-    member.member_type = 4
-    member.res_material_ptr = 3
-    member.subtype = 5
-    member.some_bool = 1
-    member.string = mat_name
+    member.value_offset = 24
+    member.value_size = 4
+    member.unknown = 3
+    member.field_type = 5
+    member.value_index = 1
+    member.parent_name = mat_name
     
     member = AnimationGroupMember()
     material_animation.members.add(f'Materials["{mat_name}"].TextureCoordinators[0].Translate', member)
-    member.type = AnimationGroupMemberType.TextureCoordinator
+    member.object_type = AnimationGroupMemberType.TextureCoordinator
     member.path = f'Materials["{mat_name}"].FragmentOperation.TextureCoordinators[0].Translate'
     member.member = mat_name
     member.blend_operation_index = 'TextureCoordinators[0]'
-    member.object_type = 28
-    member.member_type = 8
-    member.res_material_ptr = 2
-    member.subtype = 5
-    member.some_bool = 2
-    member.string = mat_name
+    member.value_offset = 28
+    member.value_size = 8
+    member.unknown = 2
+    member.field_type = 5
+    member.value_index = 2
+    member.parent_name = mat_name
 
 def make_demo_cgfx() -> CGFX:
     cgfx = CGFX()
@@ -227,7 +227,7 @@ def make_demo_cgfx() -> CGFX:
     cmdl.name = "COMMON"
     cmdl.flags = 1
     cmdl.branch_visible = True
-    cmdl.flags2 = 1
+    cmdl.visible = True
 
     skeletal_animation = GraphicsAnimationGroup()
     cmdl.animation_group_descriptions.add("SkeletalAnimation", skeletal_animation)
@@ -239,11 +239,11 @@ def make_demo_cgfx() -> CGFX:
 
     banner = AnimationGroupMember()
     skeletal_animation.members.add('banner', banner)
-    banner.type = AnimationGroupMemberType.Bone
+    banner.object_type = AnimationGroupMemberType.Bone
     banner.path = 'banner'
     banner.member = 'banner'
-    banner.subtype = 0
-    banner.string = 'banner'
+    banner.field_type = 0
+    banner.parent_name = 'banner'
     
     visibility_animation = GraphicsAnimationGroup()
     cmdl.animation_group_descriptions.add("VisibilityAnimation", visibility_animation)
@@ -253,22 +253,22 @@ def make_demo_cgfx() -> CGFX:
 
     is_visible = AnimationGroupMember()
     visibility_animation.members.add('IsVisible', is_visible)
-    is_visible.type = AnimationGroupMemberType.Model
+    is_visible.object_type = AnimationGroupMemberType.Model
     is_visible.path = 'IsVisible'
-    is_visible.object_type = 212
-    is_visible.member_type = 1
-    is_visible.subtype = 6
-    is_visible.some_bool = 1
+    is_visible.value_offset = 212
+    is_visible.value_size = 1
+    is_visible.field_type = 6
+    is_visible.value_index = 1
 
     meshes_zero_is_visible = AnimationGroupMember()
     visibility_animation.members.add('Meshes[0].IsVisible', meshes_zero_is_visible)
-    meshes_zero_is_visible.type = AnimationGroupMemberType.Mesh
+    meshes_zero_is_visible.object_type = AnimationGroupMemberType.Mesh
     meshes_zero_is_visible.path = 'Meshes[0].IsVisible'
     meshes_zero_is_visible.member = '0'
-    meshes_zero_is_visible.object_type = 36
-    meshes_zero_is_visible.member_type = 1
-    meshes_zero_is_visible.subtype = 7
-    meshes_zero_is_visible.number = 0
+    meshes_zero_is_visible.value_offset = 36
+    meshes_zero_is_visible.value_size = 1
+    meshes_zero_is_visible.field_type = 7
+    meshes_zero_is_visible.parent_index = 0
 
     material_animation = GraphicsAnimationGroup()
     cmdl.animation_group_descriptions.add("MaterialAnimation", material_animation)
@@ -345,10 +345,10 @@ def make_demo_cgfx() -> CGFX:
     skeleton.root_bone = bone
     bone.name = 'banner'
     bone.flags = 476
-    bone.position = Vector3(0, 1, 0)
+    bone.position = Vector3(10, 1, 0)
     bone.local.columns[1].w = 1
     bone.inverse_base.columns[1].w = -1
-    bone.billboard_mode = BillboardMode.ScreenViewpoint
+    bone.billboard_mode = BillboardMode.YAxial
 
     mtob = MTOB()
     cmdl.materials.add('mt_banner', mtob)
