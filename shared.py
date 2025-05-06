@@ -244,3 +244,20 @@ class OrientationMatrix(InlineObject):
         self.columns = [col1, col2, col3]
     def values(self) -> tuple:
         return tuple(self.columns)
+
+class Color(InlineObject):
+    def __init__(self, r, g, b, a):
+        self.r = r
+        self.g = g
+        self.b = b
+        self.a = a
+    def values(self):
+        return (self.r, self.g, self.b, self.a)
+
+class ColorByte(Color):
+    struct = struct.Struct('BBBB')
+
+class ColorFloat(Color):
+    struct = struct.Struct('ffff')
+    def as_byte(self) -> ColorByte:
+        return ColorByte(int(self.r * 255), int(self.g * 255), int(self.b * 255), int(self.a * 255))

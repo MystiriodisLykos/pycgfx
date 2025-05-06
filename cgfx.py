@@ -1,6 +1,10 @@
 from dict import DICT, DictInfo
 from shared import InlineObject, Signature
 from struct import Struct
+from cmdl import CMDL
+from txob import TXOB
+from mtob import MTOB
+from cflt import CFLT
 
 
 class CGFXHeader(InlineObject):
@@ -21,6 +25,10 @@ class CGFXData(InlineObject):
     offset = CGFXHeader.offset + CGFXHeader.struct.size
     signature = Signature('DATA')
     section_size = 0
+    models: DictInfo[CMDL]
+    textures: DictInfo[TXOB]
+    materials: DictInfo[MTOB]
+    lights: DictInfo[CFLT]
     def __init__(self) -> None:
         super().__init__()
         self.models = DictInfo()

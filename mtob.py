@@ -1,4 +1,4 @@
-from shared import InlineObject, StandardObject, Signature, Matrix, Vector3, Vector4, Reference
+from shared import InlineObject, StandardObject, Signature, Matrix, Vector3, Vector4, Reference, ColorByte, ColorFloat
 from dict import DictInfo
 from struct import Struct
 from txob import TXOB
@@ -25,23 +25,6 @@ class BumpMode(IntEnum):
     NotUsed = 0
     AsBump = 1
     AsTangent = 2
-
-class Color(InlineObject):
-    def __init__(self, r, g, b, a):
-        self.r = r
-        self.g = g
-        self.b = b
-        self.a = a
-    def values(self):
-        return (self.r, self.g, self.b, self.a)
-
-class ColorByte(Color):
-    struct = Struct('BBBB')
-
-class ColorFloat(Color):
-    struct = Struct('ffff')
-    def as_byte(self) -> ColorByte:
-        return ColorByte(int(self.r * 255), int(self.g * 255), int(self.b * 255), int(self.a * 255))
 
 class PicaCommand(InlineObject):
     struct = Struct('II')
@@ -192,14 +175,33 @@ class FragmentLighting(InlineObject):
         return (self.flags, self.layer_config, self.fresnel_config, self.bump_mode,
             self.bump_texture, self.is_bump_renormalize)
 
+class ReferenceLookupTable(StandardObject):
+    struct = Struct('iiixxxx')
+    type = 0x40000000
+    binary_path = ''
+    table_name = ''
+    def values(self):
+        return (self.type, self.binary_path, self.table_name)
+    
+
+class LightingLookupTable(StandardObject):
+    struct = Struct('iii')
+    input_command = 0
+    scale_command = 1
+    sampler: ReferenceLookupTable
+    def __init__(self):
+        self.sampler = ReferenceLookupTable()
+    def values(self):
+        return (self.input_command, self.scale_command, self.sampler)
+
 class FragmentLightingTable(StandardObject):
     struct = Struct('iiiiii')
-    reflectance_r_sampler = None
-    reflectance_g_sampler = None
-    reflectance_b_sampler = None
-    distribution_0_sampler = None
-    distribution_1_sampler = None
-    fresnel_sampler = None
+    reflectance_r_sampler: LightingLookupTable = None
+    reflectance_g_sampler: LightingLookupTable = None
+    reflectance_b_sampler: LightingLookupTable = None
+    distribution_0_sampler: LightingLookupTable = None
+    distribution_1_sampler: LightingLookupTable = None
+    fresnel_sampler: LightingLookupTable = None
     def values(self):
         return (self.reflectance_r_sampler, self.reflectance_g_sampler,
             self.reflectance_b_sampler, self.distribution_0_sampler,

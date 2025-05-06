@@ -1,10 +1,13 @@
 from cgfx import CGFX
-from cmdl import CMDL, CMDLWithSkeleton, GraphicsAnimationGroup, AnimationGroupMember, AnimationGroupMemberType
+from cmdl import CMDL, CMDLWithSkeleton
 from shared import StringTable, Vector3
 from txob import ImageTexture, PixelBasedImage, ReferenceTexture
 from sobj import SOBJMesh, SOBJShape, SOBJSkeleton, Bone, BillboardMode
 from primitives import Primitive, PrimitiveSet, InterleavedVertexStream, IndexStream, VertexStream, VertexAttributeUsage, VertexAttributeFlags, DataType
-from mtob import MTOB, ColorFloat, TexInfo, PicaCommand, LinkedShader
+from mtob import MTOB, ColorFloat, TexInfo, PicaCommand, LinkedShader, LightingLookupTable
+from animation import GraphicsAnimationGroup, AnimationGroupMember, AnimationGroupMemberType
+from luts import LUTS
+from cflt import CFLT
 import swizzler
 from PIL import Image
 
