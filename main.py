@@ -231,23 +231,33 @@ def gltf_get_bv_data(gltf: gltflib.GLTF, bv_id: int) -> bytes:
         buf_res = gltf.get_resource(buf.uri)
     return buf_res.data[bv.byteOffset:bv.byteOffset+bv.byteLength]
 
+def gltf_get_texture(cgfx: CGFX, gltf: gltflib.GLTF, image: gltflib.Image, normal: bool = False) -> ImageTexture:
+    tex_name = image.name or image.uri or f'image{tex.source}'
+    if normal: tex_name = f'NORM~{tex_name}'
+    if tex_name in cgfx.data.textures:
+        return cgfx.data.textures[tex_name]
+
+    if image.uri is not None:
+        image_data = gltf.get_resource(image.uri).data
+    elif image.bufferView is not None:
+        image_data = gltf_get_bv_data(gltf, image.bufferView)
+
+    im: Image.Image = Image.open(BytesIO(image_data))
+    if normal:
+        im = im.convert('RGBA')
+        for x in range(im.width):
+            for y in range(im.height):
+                px = im.getpixel((x, y))
+                im.putpixel((x, y), (255 - px[0], 255 - px[1], px[2]))
+    txob = swizzler.to_txob(im.transpose(Image.Transpose.FLIP_TOP_BOTTOM))
+    txob.name = tex_name
+    cgfx.data.textures.add(tex_name, txob)
+    return txob
+
 def convert_gltf(gltf: gltflib.GLTF) -> CGFX:
     default_sampler = gltflib.Sampler(magFilter=9729, minFilter=9729, wrapS=10497, wrapT=10497)
 
     cgfx = CGFX()
-
-    # convert textures
-    for i, image in enumerate(gltf.model.images):
-        name = image.name or image.uri or f'image{i}'
-        if image.uri is not None:
-            image_data = gltf.get_resource(image.uri).data
-        elif image.bufferView is not None:
-            image_data = gltf_get_bv_data(gltf, image.bufferView)
-
-        im: Image.Image = Image.open(BytesIO(image_data))
-        txob = swizzler.to_txob(im.transpose(Image.Transpose.FLIP_TOP_BOTTOM))
-        txob.name = name
-        cgfx.data.textures.add(name, txob)
     
     # convert mesh
     for mesh in gltf.model.meshes[:1]:
@@ -276,8 +286,8 @@ def convert_gltf(gltf: gltflib.GLTF) -> CGFX:
                 if base_tex:
                     tex = gltf.model.textures[base_tex.index]
                     image = gltf.model.images[tex.source]
-                    sampler = gltf.model.samplers[tex.sampler] if tex.sampler is not None else default_sampler
-                    tex_info = TexInfo(ReferenceTexture(cgfx.data.textures.get(image.name or image.uri)))
+                    # sampler = gltf.model.samplers[tex.sampler] if tex.sampler is not None else default_sampler
+                    tex_info = TexInfo(ReferenceTexture(gltf_get_texture(cgfx, gltf, image, False)))
                     tex_info.sampler.min_filter = 1
                     mtob.texture_mappers[mtob.used_texture_coordinates_count] = tex_info
                     mtob.texture_coordinators[mtob.used_texture_coordinates_count].source_coordinate = base_tex.texCoord or 0
@@ -289,8 +299,9 @@ def convert_gltf(gltf: gltflib.GLTF) -> CGFX:
                     # TODO bump texture needs to be inverted (at least partially)
                     tex = gltf.model.textures[material.normalTexture.index]
                     image = gltf.model.images[tex.source]
-                    sampler = gltf.model.samplers[tex.sampler] if tex.sampler is not None else default_sampler
-                    tex_info = TexInfo(ReferenceTexture(cgfx.data.textures.get(image.name or image.uri)))
+                    
+                    # sampler = gltf.model.samplers[tex.sampler] if tex.sampler is not None else default_sampler
+                    tex_info = TexInfo(ReferenceTexture(gltf_get_texture(cgfx, gltf, image, True)))
                     tex_info.sampler.min_filter = 1
                     mtob.texture_mappers[mtob.used_texture_coordinates_count] = tex_info
                     mtob.texture_coordinators[mtob.used_texture_coordinates_count].source_coordinate = material.normalTexture.texCoord or 0
