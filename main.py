@@ -4,12 +4,15 @@ from shared import StringTable, Vector3
 from txob import ImageTexture, PixelBasedImage, ReferenceTexture
 from sobj import SOBJMesh, SOBJShape, SOBJSkeleton, Bone, BillboardMode
 from primitives import Primitive, PrimitiveSet, InterleavedVertexStream, IndexStream, VertexStream, VertexAttributeUsage, VertexAttributeFlags, DataType
-from mtob import MTOB, ColorFloat, TexInfo, PicaCommand, LinkedShader, LightingLookupTable
+from mtob import MTOB, ColorFloat, TexInfo, PicaCommand, LinkedShader, LightingLookupTable, MTOBFlags
 from animation import GraphicsAnimationGroup, AnimationGroupMember, AnimationGroupMemberType
-from luts import LUTS
+from luts import LUTS, LutTable
+from cenv import CENV, CENVLight, CENVLightSet
 from cflt import CFLT
 import swizzler
 from PIL import Image
+from gltflib import GLTF
+from io import BytesIO
 
 def make_material_animation(material_animation: GraphicsAnimationGroup, mat_name: str):
     member = AnimationGroupMember()
@@ -219,6 +222,260 @@ def make_material_animation(material_animation: GraphicsAnimationGroup, mat_name
     member.value_index = 2
     member.parent_name = mat_name
 
+def gltf_get_bv_data(gltf: GLTF, bv_id: int) -> bytes:
+    bv = gltf.model.bufferViews[bv_id]
+    buf = gltf.model.buffers[bv.buffer]
+    if buf.uri is None:
+        buf_res = gltf.get_glb_resource()
+    else:
+        buf_res = gltf.get_resource(buf.uri)
+    return buf_res.data[bv.byteOffset:bv.byteOffset+bv.byteLength]
+
+def convert_gltf(gltf: GLTF) -> CGFX:
+    cgfx = CGFX()
+
+    # convert textures
+    for image in gltf.model.images:
+        name = image.name or image.uri
+        if image.uri is not None:
+            image_data = gltf.get_resource(image.uri).data
+        elif image.bufferView is not None:
+            image_data = gltf_get_bv_data(gltf, image.bufferView)
+
+        im: Image.Image = Image.open(BytesIO(image_data))
+        txob = swizzler.to_txob(im.transpose(Image.Transpose.FLIP_TOP_BOTTOM))
+        txob.name = name
+        cgfx.data.textures.add(name, txob)
+    
+    # convert mesh
+    for mesh in gltf.model.meshes[:1]:
+        cmdl = CMDL()
+        cgfx.data.models.add("COMMON", cmdl)
+        cmdl.name = "COMMON"
+        
+        for material in (gltf.model.materials[p.material] for p in mesh.primitives):
+            if material.name not in cmdl.materials:
+                mtob = MTOB()
+                cmdl.materials.add(material.name, mtob)
+                mtob.name = material.name
+                mtob.fragment_shader.texture_combiners[0].src_rgb = 0xe31
+                mtob.fragment_shader.texture_combiners[0].src_alpha = 0xe30
+                mtob.fragment_shader.texture_combiners[0].combine_rgb = 1
+                mtob.fragment_shader.texture_combiners[0].combine_alpha = 1
+                base_tex = material.pbrMetallicRoughness.baseColorTexture
+                mtob.flags = MTOBFlags.FragmentLight
+                # mtob.fragment_shader.fragment_lighting_table.distribution_0_sampler = LightingLookupTable()
+                # mtob.fragment_shader.fragment_lighting_table.distribution_0_sampler.sampler.binary_path = 'LutSet'
+                # mtob.fragment_shader.fragment_lighting_table.distribution_0_sampler.sampler.table_name = 'MyLut'
+                if base_tex is not None:
+                    tex = gltf.model.textures[base_tex.index]
+                    image = gltf.model.images[tex.source]
+                    sampler = gltf.model.samplers[tex.sampler]
+                    tex_info = TexInfo(ReferenceTexture(cgfx.data.textures.get(image.name or image.uri)))
+                    tex_info.sampler.min_filter = 1
+                    mtob.texture_mappers[0] = tex_info
+                    mtob.used_texture_coordinates_count = 1
+        
+        for i, p in enumerate(mesh.primitives):
+            sobj_mesh = SOBJMesh(cmdl)
+            cmdl.meshes.add(sobj_mesh)
+            sobj_mesh.mesh_node_visibility_index = 65535
+            sobj_mesh.material_index = cmdl.materials.get_index(gltf.model.materials[p.material].name)
+            sobj_mesh.shape_index = i
+            shape = SOBJShape()
+            cmdl.shapes.add(shape)
+            cmdl.scale = Vector3(7, 7, 7)
+            primitive_set = PrimitiveSet()
+            shape.primitive_sets.add(primitive_set)
+            primitive = Primitive()
+            primitive_set.primitives.add(primitive)
+            if p.indices is not None:
+                indices = gltf.model.accessors[p.indices]
+                index_stream = IndexStream()
+                index_stream.data_type = indices.componentType
+                index_stream.face_data = gltf_get_bv_data(gltf, indices.bufferView)
+                primitive.index_streams.add(index_stream)
+                primitive.buffer_objects.add(0)
+            for ty, acc_id in p.attributes.__dict__.items():
+                if acc_id is None:
+                    continue
+                acc = gltf.model.accessors[acc_id]
+                vs = VertexStream()
+                vs.usage = {
+                    "POSITION": VertexAttributeUsage.Position,
+                    "TEXCOORD_0": VertexAttributeUsage.TextureCoordinate0,
+                    "NORMAL": VertexAttributeUsage.Normal,
+                    "TANGENT": VertexAttributeUsage.Tangent,
+                }.get(ty)
+                if vs.usage is None: continue
+                shape.vertex_attributes.add(vs)
+                vs.components_count = {"SCALAR": 1, "VEC2": 2, "VEC3": 3, "VEC4": 4}[acc.type]
+                vs.format_type = acc.componentType
+                vs.vertex_stream_data = gltf_get_bv_data(gltf, acc.bufferView)
+
+        visibility_animation = GraphicsAnimationGroup()
+        cmdl.animation_group_descriptions.add("VisibilityAnimation", visibility_animation)
+        visibility_animation.name = 'VisibilityAnimation'
+        visibility_animation.member_type = 3
+        visibility_animation.blend_operations.add(0)
+
+        is_visible = AnimationGroupMember()
+        visibility_animation.members.add('IsVisible', is_visible)
+        is_visible.object_type = AnimationGroupMemberType.Model
+        is_visible.path = 'IsVisible'
+        is_visible.value_offset = 212
+        is_visible.value_size = 1
+        is_visible.field_type = 6
+        is_visible.value_index = 1
+
+        for i in range(len(cmdl.meshes)):
+            mesh_is_visible = AnimationGroupMember()
+            visibility_animation.members.add(f'Meshes[{i}].IsVisible', mesh_is_visible)
+            mesh_is_visible.object_type = AnimationGroupMemberType.Mesh
+            mesh_is_visible.path = f'Meshes[{i}].IsVisible'
+            mesh_is_visible.member = str(i)
+            mesh_is_visible.value_offset = 36
+            mesh_is_visible.value_size = 1
+            mesh_is_visible.field_type = 7
+            mesh_is_visible.parent_index = i
+
+        material_animation = GraphicsAnimationGroup()
+        cmdl.animation_group_descriptions.add("MaterialAnimation", material_animation)
+        material_animation.name = 'MaterialAnimation'
+        material_animation.member_type = 2
+        material_animation.evalution_timing = 1
+        material_animation.blend_operations.add(3)
+        material_animation.blend_operations.add(7)
+        material_animation.blend_operations.add(5)
+        material_animation.blend_operations.add(2)
+
+        for m in cmdl.materials:
+            make_material_animation(material_animation, m)
+
+    cenv = CENV()
+    cenv.name = 'Scene'
+    cgfx.data.scenes.add(cenv.name, cenv)
+    light_set = CENVLightSet()
+    cenv.light_sets.add(light_set)
+    cenv_light = CENVLight()
+    light_set.lights.add(cenv_light)
+    cenv_light.name = 'TheLight'
+
+    cflt = CFLT()
+    cflt.name = 'TheLight'
+    cgfx.data.lights.add(cflt.name, cflt)
+
+    # optional lighting stuff
+
+    # light_animation = GraphicsAnimationGroup()
+    # light_animation.name = 'LightAnimation'
+    # cflt.animation_group_descriptions.add(light_animation.name, light_animation)
+    # light_animation.member_type = 4
+    # light_animation.blend_operations.add(8)
+    # light_animation.blend_operations.add(3)
+    # light_animation.blend_operations.add(6)
+    # light_animation.blend_operations.add(2)
+    # light_animation.blend_operations.add(0)
+    
+    # member = AnimationGroupMember()
+    # light_animation.members.add('Transform', member)
+    # member.object_type = 0x800000
+    # member.path = 'Transform'
+    # member.value_offset = 48
+    # member.value_size = 36
+    # member.field_type = 9
+    # member.parent_index = 9
+
+    # member = AnimationGroupMember()
+    # light_animation.members.add('Ambient', member)
+    # member.object_type = 0x100000
+    # member.path = 'Ambient'
+    # member.value_offset = 188
+    # member.value_size = 16
+    # member.unknown = 1
+    # member.field_type = 13
+    # member.value_index = 0
+
+    # member = AnimationGroupMember()
+    # light_animation.members.add('Diffuse', member)
+    # member.object_type = 0x100000
+    # member.path = 'Diffuse'
+    # member.value_offset = 204
+    # member.value_size = 16
+    # member.unknown = 1
+    # member.field_type = 13
+    # member.value_index = 1
+
+    # member = AnimationGroupMember()
+    # light_animation.members.add('Specular0', member)
+    # member.object_type = 0x100000
+    # member.path = 'Specular0'
+    # member.value_offset = 220
+    # member.value_size = 16
+    # member.unknown = 1
+    # member.field_type = 13
+    # member.value_index = 2
+
+    # member = AnimationGroupMember()
+    # light_animation.members.add('Specular1', member)
+    # member.object_type = 0x100000
+    # member.path = 'Specular1'
+    # member.value_offset = 236
+    # member.value_size = 16
+    # member.unknown = 1
+    # member.field_type = 13
+    # member.value_index = 3
+
+    # member = AnimationGroupMember()
+    # light_animation.members.add('Direction', member)
+    # member.object_type = 0x100000
+    # member.path = 'Direction'
+    # member.value_offset = 268
+    # member.value_size = 12
+    # member.unknown = 2
+    # member.field_type = 13
+    # member.value_index = 4
+
+    # member = AnimationGroupMember()
+    # light_animation.members.add('DistanceAttenuationStart', member)
+    # member.object_type = 0x100000
+    # member.path = 'DistanceAttenuationStart'
+    # member.value_offset = 288
+    # member.value_size = 4
+    # member.unknown = 3
+    # member.field_type = 13
+    # member.value_index = 5
+
+    # member = AnimationGroupMember()
+    # light_animation.members.add('DistanceAttenuationEnd', member)
+    # member.object_type = 0x100000
+    # member.path = 'DistanceAttenuationEnd'
+    # member.value_offset = 292
+    # member.value_size = 4
+    # member.unknown = 3
+    # member.field_type = 13
+    # member.value_index = 6
+
+    # member = AnimationGroupMember()
+    # light_animation.members.add('IsLightEnabled', member)
+    # member.object_type = 0x100000
+    # member.path = 'IsLightEnabled'
+    # member.value_offset = 180
+    # member.value_size = 1
+    # member.unknown = 4
+    # member.field_type = 12
+
+    # luts = LUTS()
+    # luts.name = 'LutSet'
+    # cgfx.data.lookup_tables.add('LutSet', luts)
+    # lut_info = LutTable()
+    # lut_info.name = 'MyLut'
+    # luts.tables.add('MyLut', lut_info)
+    
+    return cgfx
+
+        
+
 def make_demo_cgfx() -> CGFX:
     cgfx = CGFX()
     txob = swizzler.to_txob(Image.open("banner.png"))
@@ -390,6 +647,8 @@ def write(cgfx: CGFX) -> bytes:
     return data
 
 if __name__ == '__main__':
-    cgfx = make_demo_cgfx()
+    #cgfx = make_demo_cgfx()
+    gltf = GLTF.load("Cube.gltf", load_file_resources=True)
+    cgfx = convert_gltf(gltf)
     with open("test.cgfx", "wb") as f:
         f.write(write(cgfx))
