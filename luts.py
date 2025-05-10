@@ -5,14 +5,14 @@ from struct import Struct
 def generate_lut_commands(lut: list[float]) -> bytes:
     assert len(lut) == 256
     command = b'\xc8\x01\xff\x07'
-    values = [min(int(i * 0x1000), 0xfff)]
-    diffs = [min(int((j - i) * 0x800), 0x7ff) for i, j in zip(lut, lut[1:])] + [0]
+    values = [min(int(i * 0x1000), 0xfff) for i in lut]
+    diffs = [min(int(abs(j - i) * 0x800), 0x7ff) for i, j in zip(lut, lut[1:])] + [0]
     fixed = [((d << 12) | v).to_bytes(4, 'little') for v, d in zip(values, diffs)]
     assert len(fixed) == 256
     return fixed[0] + command + b''.join(fixed[1:129]) + command + b''.join(fixed[129:])
 
-class LutInfo(StandardObject):
-    struct = Struct('iiiii')
+class LutTable(StandardObject):
+    struct = Struct('Iiiii')
     type = 0x80000000
     name = ''
     some_bool = True
@@ -24,7 +24,7 @@ class LutInfo(StandardObject):
 
 
 class LUTS(StandardObject):
-    struct = Struct('i4siiiiii')
+    struct = Struct('I4siiiiii')
     type = 0x04000000
     signature = Signature("LUTS")
     revision = 0x04000000
@@ -33,6 +33,7 @@ class LUTS(StandardObject):
     info: DictInfo
     def __init__(self):
         self.user_data = DictInfo()
-        self.info = DictInfo()
+        self.tables = DictInfo()
     def values(self):
-        return (self.type, self.signature, self.revision, self.name, self.user_data, self.info)
+        return (self.type, self.signature, self.revision, self.name, self.user_data, self.tables)
+

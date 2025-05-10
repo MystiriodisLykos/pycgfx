@@ -1,4 +1,4 @@
-from shared import Vector3, Matrix, ColorByte, ColorFloat, StandardObject, Signature
+from shared import Vector3, Vector4, Matrix, ColorByte, ColorFloat, StandardObject, Signature
 from dict import DictInfo
 from animation import GraphicsAnimationGroup
 from struct import Struct
@@ -8,9 +8,9 @@ def float_to_20bit(f: float) -> int:
     data = s.pack(f)
     casted = int.from_bytes(data, 'little', signed=False)
     mantissa = casted & 0x7fffff
-    exponent = (casted >> 23 - 0x7f) & 0xff
+    exponent = max(-0x3f, min(0x40, (((casted >> 23) & 0xff) - 0x7f)))
     sign = casted >> 31
-    return (sign << 19) | (((exponent & 0x7f) + 0x3f) << 12) | (mantissa >> 13)
+    return (sign << 19) | (((exponent + 0x3f) & 0x7f) << 12) | (mantissa >> 13)
 
 class CFLT(StandardObject):
     struct = Struct('i4siiiiiiixxxxiifffffffff' + 'f' * 12 * 2 + 'ii' + 'f' * 16 + 'B' * 16 + 'fffiixxxxxxxxiixxxx')
@@ -29,15 +29,15 @@ class CFLT(StandardObject):
     local: Matrix
     world: Matrix
     enabled = True
-    light_type = 1
-    ambient = ColorFloat(0.4, 0.4, 0.4, 1)
-    diffuse = ColorFloat(1, 1, 1, 1)
+    light_type = 0
+    ambient: ColorFloat
+    diffuse: ColorFloat
     specular: list[ColorFloat]
     position_or_direction: Vector3
     attenuation_lut = None
     spotlight_lut = None
     attenuation_scale = 1
-    attenuation_bias = 0
+    attenuation_bias = -0.0
     def __init__(self) -> None:
         super().__init__()
         self.scale = Vector3(1, 1, 1)
@@ -47,13 +47,15 @@ class CFLT(StandardObject):
         self.world = Matrix(Vector4(1, 0, 0, 0), Vector4(0, 1, 0, 0), Vector4(0, 0, 1, 0))
         self.user_data = DictInfo()
         self.animation_group_descriptions = DictInfo()
-        self.position_or_direction = Vector3(1, 1, 1)
-        self.specular = [ColorFloat(0.33, 0.33, 0.33, 0), ColorFloat(0, 0, 0, 0)]
+        self.position_or_direction = Vector3(1, -1, -1)
+        self.ambient = ColorFloat(0.4, 0.4, 0.4, 1)
+        self.diffuse = ColorFloat(1, 1, 1, 1)
+        self.specular = [ColorFloat(1, 1, 1, 1), ColorFloat(1, 1, 1, 1)]
     def values(self) -> tuple:
         return (self.type, self.signature, self.revision, self.name, self.user_data,
                 self.flags, self.branch_visible, self.nr_children, self.animation_group_descriptions,
                 self.scale, self.rotation, self.translation, self.local, self.world,
-                self.light_type, self.ambient, self.diffuse, *self.specular,
+                self.enabled, self.light_type, self.ambient, self.diffuse, *self.specular,
                 self.ambient.as_byte(), self.diffuse.as_byte(),
                 *(x.as_byte() for x in self.specular),
                 self.position_or_direction, self.attenuation_lut, self.spotlight_lut,

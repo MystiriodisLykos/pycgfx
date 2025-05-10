@@ -4,6 +4,14 @@ from struct import Struct
 from txob import TXOB
 from enum import IntEnum, IntFlag
 
+class MTOBFlags(IntFlag):
+    FragmentLight = 1
+    VertexLight = 2
+    HemisphereLight = 4
+    HemisphereOcclusion = 8
+    Fog = 16
+    PolygonOffset = 32
+
 class CullMode(IntEnum):
     Never = 0
     FrontFace = 1
@@ -178,7 +186,9 @@ class FragmentLighting(InlineObject):
 class ReferenceLookupTable(StandardObject):
     struct = Struct('iiixxxx')
     type = 0x40000000
+    # used to look up the LUTS in the DATA block
     binary_path = ''
+    # used to look up the table within the LUTS
     table_name = ''
     def values(self):
         return (self.type, self.binary_path, self.table_name)
@@ -257,7 +267,7 @@ class MTOB(StandardObject):
     revision = 0x6000000
     name = ''
     user_data: DictInfo
-    flags = 0
+    flags = MTOBFlags(0)
     texture_coordinates_config = 0
     transluscency_kind = 0
     material_color: MaterialColor
