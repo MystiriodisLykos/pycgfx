@@ -4,14 +4,14 @@ from shared import StringTable, Vector3
 from txob import ImageTexture, PixelBasedImage, ReferenceTexture
 from sobj import SOBJMesh, SOBJShape, SOBJSkeleton, Bone, BillboardMode
 from primitives import Primitive, PrimitiveSet, InterleavedVertexStream, IndexStream, VertexStream, VertexAttributeUsage, VertexAttributeFlags, DataType
-from mtob import MTOB, ColorFloat, TexInfo, PicaCommand, LinkedShader, LightingLookupTable, MTOBFlags
+from mtob import MTOB, ColorFloat, TexInfo, PicaCommand, LinkedShader, LightingLookupTable, MTOBFlags, ConstantColorSource, BumpMode
 from animation import GraphicsAnimationGroup, AnimationGroupMember, AnimationGroupMemberType
 from luts import LUTS, LutTable
 from cenv import CENV, CENVLight, CENVLightSet
 from cflt import CFLT
 import swizzler
 from PIL import Image
-from gltflib import GLTF
+import gltflib
 from io import BytesIO
 
 def make_material_animation(material_animation: GraphicsAnimationGroup, mat_name: str):
@@ -222,7 +222,7 @@ def make_material_animation(material_animation: GraphicsAnimationGroup, mat_name
     member.value_index = 2
     member.parent_name = mat_name
 
-def gltf_get_bv_data(gltf: GLTF, bv_id: int) -> bytes:
+def gltf_get_bv_data(gltf: gltflib.GLTF, bv_id: int) -> bytes:
     bv = gltf.model.bufferViews[bv_id]
     buf = gltf.model.buffers[bv.buffer]
     if buf.uri is None:
@@ -231,12 +231,14 @@ def gltf_get_bv_data(gltf: GLTF, bv_id: int) -> bytes:
         buf_res = gltf.get_resource(buf.uri)
     return buf_res.data[bv.byteOffset:bv.byteOffset+bv.byteLength]
 
-def convert_gltf(gltf: GLTF) -> CGFX:
+def convert_gltf(gltf: gltflib.GLTF) -> CGFX:
+    default_sampler = gltflib.Sampler(magFilter=9729, minFilter=9729, wrapS=10497, wrapT=10497)
+
     cgfx = CGFX()
 
     # convert textures
-    for image in gltf.model.images:
-        name = image.name or image.uri
+    for i, image in enumerate(gltf.model.images):
+        name = image.name or image.uri or f'image{i}'
         if image.uri is not None:
             image_data = gltf.get_resource(image.uri).data
         elif image.bufferView is not None:
@@ -258,23 +260,44 @@ def convert_gltf(gltf: GLTF) -> CGFX:
                 mtob = MTOB()
                 cmdl.materials.add(material.name, mtob)
                 mtob.name = material.name
-                mtob.fragment_shader.texture_combiners[0].src_rgb = 0xe31
-                mtob.fragment_shader.texture_combiners[0].src_alpha = 0xe30
+                mtob.fragment_shader.texture_combiners[0].src_rgb = 0x030
+                mtob.fragment_shader.texture_combiners[0].src_alpha = 0x030
                 mtob.fragment_shader.texture_combiners[0].combine_rgb = 1
                 mtob.fragment_shader.texture_combiners[0].combine_alpha = 1
+                mtob.fragment_shader.texture_combiners[1].src_rgb = 0x0f1
+                mtob.fragment_shader.texture_combiners[1].combine_rgb = 1
                 base_tex = material.pbrMetallicRoughness.baseColorTexture
+                if material.pbrMetallicRoughness.baseColorFactor:
+                    mtob.material_color.diffuse = ColorFloat(*material.pbrMetallicRoughness.baseColorFactor)
                 mtob.flags = MTOBFlags.FragmentLight
                 # mtob.fragment_shader.fragment_lighting_table.distribution_0_sampler = LightingLookupTable()
                 # mtob.fragment_shader.fragment_lighting_table.distribution_0_sampler.sampler.binary_path = 'LutSet'
                 # mtob.fragment_shader.fragment_lighting_table.distribution_0_sampler.sampler.table_name = 'MyLut'
-                if base_tex is not None:
+                if base_tex:
                     tex = gltf.model.textures[base_tex.index]
                     image = gltf.model.images[tex.source]
-                    sampler = gltf.model.samplers[tex.sampler]
+                    sampler = gltf.model.samplers[tex.sampler] if tex.sampler is not None else default_sampler
                     tex_info = TexInfo(ReferenceTexture(cgfx.data.textures.get(image.name or image.uri)))
                     tex_info.sampler.min_filter = 1
-                    mtob.texture_mappers[0] = tex_info
-                    mtob.used_texture_coordinates_count = 1
+                    mtob.texture_mappers[mtob.used_texture_coordinates_count] = tex_info
+                    mtob.texture_coordinators[mtob.used_texture_coordinates_count].source_coordinate = base_tex.texCoord or 0
+                    mtob.used_texture_coordinates_count += 1
+                else:
+                    mtob.fragment_shader.texture_combiners[0].combine_rgb = 0
+                    mtob.fragment_shader.texture_combiners[0].combine_alpha = 0
+                if material.normalTexture:
+                    # TODO bump texture needs to be inverted (at least partially)
+                    tex = gltf.model.textures[material.normalTexture.index]
+                    image = gltf.model.images[tex.source]
+                    sampler = gltf.model.samplers[tex.sampler] if tex.sampler is not None else default_sampler
+                    tex_info = TexInfo(ReferenceTexture(cgfx.data.textures.get(image.name or image.uri)))
+                    tex_info.sampler.min_filter = 1
+                    mtob.texture_mappers[mtob.used_texture_coordinates_count] = tex_info
+                    mtob.texture_coordinators[mtob.used_texture_coordinates_count].source_coordinate = material.normalTexture.texCoord or 0
+                    mtob.used_texture_coordinates_count += 1
+                    mtob.fragment_shader.fragment_lighting.bump_mode = BumpMode.AsBump
+                    mtob.fragment_shader.fragment_lighting.bump_texture = 0
+                    mtob.fragment_shader.fragment_lighting.is_bump_renormalize = True
         
         for i, p in enumerate(mesh.primitives):
             sobj_mesh = SOBJMesh(cmdl)
@@ -284,7 +307,7 @@ def convert_gltf(gltf: GLTF) -> CGFX:
             sobj_mesh.shape_index = i
             shape = SOBJShape()
             cmdl.shapes.add(shape)
-            cmdl.scale = Vector3(7, 7, 7)
+            cmdl.scale = Vector3(16, 16, 16)
             primitive_set = PrimitiveSet()
             shape.primitive_sets.add(primitive_set)
             primitive = Primitive()
@@ -303,9 +326,13 @@ def convert_gltf(gltf: GLTF) -> CGFX:
                 vs = VertexStream()
                 vs.usage = {
                     "POSITION": VertexAttributeUsage.Position,
-                    "TEXCOORD_0": VertexAttributeUsage.TextureCoordinate0,
                     "NORMAL": VertexAttributeUsage.Normal,
                     "TANGENT": VertexAttributeUsage.Tangent,
+                    "TEXCOORD_0": VertexAttributeUsage.TextureCoordinate0,
+                    "TEXCOORD_1": VertexAttributeUsage.TextureCoordinate1,
+                    "COLOR_0": VertexAttributeUsage.Color,
+                    "JOINTS_0": VertexAttributeUsage.BoneIndex,
+                    "WEIGHTS_0": VertexAttributeUsage.BoneWeight,
                 }.get(ty)
                 if vs.usage is None: continue
                 shape.vertex_attributes.add(vs)
@@ -648,7 +675,7 @@ def write(cgfx: CGFX) -> bytes:
 
 if __name__ == '__main__':
     #cgfx = make_demo_cgfx()
-    gltf = GLTF.load("Cube.gltf", load_file_resources=True)
+    gltf = gltflib.GLTF.load("Cube.gltf", load_file_resources=True)
     cgfx = convert_gltf(gltf)
     with open("test.cgfx", "wb") as f:
         f.write(write(cgfx))

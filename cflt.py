@@ -47,7 +47,7 @@ class CFLT(StandardObject):
         self.world = Matrix(Vector4(1, 0, 0, 0), Vector4(0, 1, 0, 0), Vector4(0, 0, 1, 0))
         self.user_data = DictInfo()
         self.animation_group_descriptions = DictInfo()
-        self.position_or_direction = Vector3(1, -1, -1)
+        self.position_or_direction = Vector3(0, 0, -1)
         self.ambient = ColorFloat(0.4, 0.4, 0.4, 1)
         self.diffuse = ColorFloat(1, 1, 1, 1)
         self.specular = [ColorFloat(1, 1, 1, 1), ColorFloat(1, 1, 1, 1)]

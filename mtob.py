@@ -178,10 +178,10 @@ class FragmentLighting(InlineObject):
     fresnel_config = FresnelConfig(0)
     bump_texture = 0
     bump_mode = BumpMode.NotUsed
-    is_bump_renormalize = 0
+    is_bump_renormalize = False
     def values(self):
-        return (self.flags, self.layer_config, self.fresnel_config, self.bump_mode,
-            self.bump_texture, self.is_bump_renormalize)
+        return (self.flags, self.layer_config, self.fresnel_config, self.bump_texture,
+            self.bump_mode, self.is_bump_renormalize)
 
 class ReferenceLookupTable(StandardObject):
     struct = Struct('iiixxxx')
@@ -217,16 +217,28 @@ class FragmentLightingTable(StandardObject):
             self.reflectance_b_sampler, self.distribution_0_sampler,
             self.distribution_1_sampler, self.fresnel_sampler)
 
+class ConstantColorSource(IntEnum):
+    Constant0 = 0
+    Constant1 = 1
+    Constant2 = 2
+    Constant3 = 3
+    Constant4 = 4
+    Constant5 = 5
+    Emission = 6
+    Ambient = 7
+    Diffuse = 8
+    Specular0 = 9
+    Specular1 = 10
+
 class TextureCombiner(InlineObject):
-    struct = Struct('ihhIihhBBBBhh')
-    constant = 0
+    struct = Struct('ihhIihhxxxxhh')
+    constant = ConstantColorSource.Constant0
     src_rgb = 0xfff
     src_alpha = 0xfff
     header: int
     tev_ops = 0
     combine_rgb = 0
     combine_alpha = 0
-    const_rgba: ColorByte
     scale_rgb = 0
     scale_alpha = 0
     def __init__(self, i):
@@ -234,7 +246,7 @@ class TextureCombiner(InlineObject):
         self.const_rgba = ColorByte(0, 0, 0, 255)
     def values(self):
         return (self.constant, self.src_rgb, self.src_alpha, self.header,
-            self.tev_ops, self.combine_rgb, self.combine_alpha, self.const_rgba,
+            self.tev_ops, self.combine_rgb, self.combine_alpha,
             self.scale_rgb, self.scale_alpha)
 
 class FragmentShader(StandardObject):
