@@ -62,7 +62,7 @@ class MaterialColor(InlineObject):
 class Rasterization(InlineObject):
     struct = Struct('iifii')
     flags = 0
-    cull_mode = CullMode.FrontFace
+    cull_mode = CullMode.FrontFace # ignored by the home menu
     polygon_offset_unit = 0
     command = PicaCommand(2, 0x00010040)
     def values(self):
