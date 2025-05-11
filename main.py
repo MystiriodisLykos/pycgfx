@@ -231,8 +231,9 @@ def gltf_get_bv_data(gltf: gltflib.GLTF, bv_id: int) -> bytes:
         buf_res = gltf.get_resource(buf.uri)
     return buf_res.data[bv.byteOffset:bv.byteOffset+bv.byteLength]
 
-def gltf_get_texture(cgfx: CGFX, gltf: gltflib.GLTF, image: gltflib.Image, normal: bool = False) -> ImageTexture:
-    tex_name = image.name or image.uri or f'image{tex.source}'
+def gltf_get_texture(cgfx: CGFX, gltf: gltflib.GLTF, image_id: int, normal: bool = False) -> ImageTexture:
+    image = gltf.model.images[image_id]
+    tex_name = image.name or image.uri or f'image{image_id}'
     if normal: tex_name = f'NORM~{tex_name}'
     if tex_name in cgfx.data.textures:
         return cgfx.data.textures[tex_name]
@@ -256,6 +257,7 @@ def gltf_get_texture(cgfx: CGFX, gltf: gltflib.GLTF, image: gltflib.Image, norma
 
 def convert_gltf(gltf: gltflib.GLTF) -> CGFX:
     default_sampler = gltflib.Sampler(magFilter=9729, minFilter=9729, wrapS=10497, wrapT=10497)
+    default_material = gltflib.Material(name='glTF default material')
 
     cgfx = CGFX()
     
@@ -265,29 +267,31 @@ def convert_gltf(gltf: gltflib.GLTF) -> CGFX:
         cgfx.data.models.add("COMMON", cmdl)
         cmdl.name = "COMMON"
         
-        for material in (gltf.model.materials[p.material] for p in mesh.primitives):
+        for material in (gltf.model.materials[p.material] if p.material is not None else default_material for p in mesh.primitives):
             if material.name not in cmdl.materials:
                 mtob = MTOB()
                 cmdl.materials.add(material.name, mtob)
                 mtob.name = material.name
+                # multiply base texture with primary color
                 mtob.fragment_shader.texture_combiners[0].src_rgb = 0x030
                 mtob.fragment_shader.texture_combiners[0].src_alpha = 0x030
                 mtob.fragment_shader.texture_combiners[0].combine_rgb = 1
                 mtob.fragment_shader.texture_combiners[0].combine_alpha = 1
+                # multiply with diffuse lighting
                 mtob.fragment_shader.texture_combiners[1].src_rgb = 0x0f1
                 mtob.fragment_shader.texture_combiners[1].combine_rgb = 1
-                base_tex = material.pbrMetallicRoughness.baseColorTexture
-                if material.pbrMetallicRoughness.baseColorFactor:
-                    mtob.material_color.diffuse = ColorFloat(*material.pbrMetallicRoughness.baseColorFactor)
+                pmr = material.pbrMetallicRoughness or gltflib.PBRMetallicRoughness()
+                base_tex = pmr.baseColorTexture
+                if pmr.baseColorFactor:
+                    mtob.material_color.diffuse = ColorFloat(*pmr.baseColorFactor)
                 mtob.flags = MTOBFlags.FragmentLight
                 # mtob.fragment_shader.fragment_lighting_table.distribution_0_sampler = LightingLookupTable()
                 # mtob.fragment_shader.fragment_lighting_table.distribution_0_sampler.sampler.binary_path = 'LutSet'
                 # mtob.fragment_shader.fragment_lighting_table.distribution_0_sampler.sampler.table_name = 'MyLut'
                 if base_tex:
                     tex = gltf.model.textures[base_tex.index]
-                    image = gltf.model.images[tex.source]
                     # sampler = gltf.model.samplers[tex.sampler] if tex.sampler is not None else default_sampler
-                    tex_info = TexInfo(ReferenceTexture(gltf_get_texture(cgfx, gltf, image, False)))
+                    tex_info = TexInfo(ReferenceTexture(gltf_get_texture(cgfx, gltf, tex.source, False)))
                     tex_info.sampler.min_filter = 1
                     mtob.texture_mappers[mtob.used_texture_coordinates_count] = tex_info
                     mtob.texture_coordinators[mtob.used_texture_coordinates_count].source_coordinate = base_tex.texCoord or 0
@@ -298,10 +302,9 @@ def convert_gltf(gltf: gltflib.GLTF) -> CGFX:
                 if material.normalTexture:
                     # TODO bump texture needs to be inverted (at least partially)
                     tex = gltf.model.textures[material.normalTexture.index]
-                    image = gltf.model.images[tex.source]
                     
                     # sampler = gltf.model.samplers[tex.sampler] if tex.sampler is not None else default_sampler
-                    tex_info = TexInfo(ReferenceTexture(gltf_get_texture(cgfx, gltf, image, True)))
+                    tex_info = TexInfo(ReferenceTexture(gltf_get_texture(cgfx, gltf, tex.source, True)))
                     tex_info.sampler.min_filter = 1
                     mtob.texture_mappers[mtob.used_texture_coordinates_count] = tex_info
                     mtob.texture_coordinators[mtob.used_texture_coordinates_count].source_coordinate = material.normalTexture.texCoord or 0
@@ -314,7 +317,7 @@ def convert_gltf(gltf: gltflib.GLTF) -> CGFX:
             sobj_mesh = SOBJMesh(cmdl)
             cmdl.meshes.add(sobj_mesh)
             sobj_mesh.mesh_node_visibility_index = 65535
-            sobj_mesh.material_index = cmdl.materials.get_index(gltf.model.materials[p.material].name)
+            sobj_mesh.material_index = cmdl.materials.get_index(gltf.model.materials[p.material].name if p.material is not None else default_material.name)
             sobj_mesh.shape_index = i
             shape = SOBJShape()
             cmdl.shapes.add(shape)

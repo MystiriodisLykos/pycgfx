@@ -45,7 +45,7 @@ class PicaCommand(InlineObject):
 class MaterialColor(InlineObject):
     struct = Struct('ffff' * (3 + 2 + 6) + 'BBBB' * (3 + 2 + 6) + 'i')
     emission = ColorFloat(0, 0, 0, 0)
-    ambient = ColorFloat(1, 1, 1, 1)
+    ambient = ColorFloat(0, 0, 0, 1)
     diffuse = ColorFloat(1, 1, 1, 1)
     specular: list[ColorFloat]
     constant: list[ColorFloat]
