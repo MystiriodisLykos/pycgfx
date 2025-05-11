@@ -682,6 +682,8 @@ def write(cgfx: CGFX) -> bytes:
     data += strings.write()
     if not imag.empty():
         data += b'IMAG' + imag.size().to_bytes(4, 'little') + imag.write()
+    if len(data) > 0x80000:
+        print(f"WARNING: CGFX is too big ({len(data)} bytes, max is {0x80000} bytes)")
     return data
 
 if __name__ == '__main__':
