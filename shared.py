@@ -168,6 +168,9 @@ class BaseObject(ABC):
     def size(self) -> int:
         self.refresh_struct()
         return self.struct.size
+    
+    def __eq__(self, other) -> bool:
+        return isinstance(other, type(self)) and self.values() == other.values()
 
 class StandardObject(BaseObject):
     pass

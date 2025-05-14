@@ -1,6 +1,6 @@
 from struct import Struct
 
-from enum import IntEnum
+from enum import IntEnum, IntFlag
 
 from dict import DictInfo
 from shared import Signature, StandardObject, List, Vector3, Vector4, OrientationMatrix, Reference, Matrix
@@ -96,10 +96,23 @@ class SOBJShape(StandardObject):
             self.primitive_sets, self.base_address, self.vertex_attributes,
             self.blend_shape)
 
+class BoneFlags(IntFlag):
+    IsIdentity = 1
+    IsTranslateZero = 2
+    IsRotateZero = 4
+    IsScaleOne = 8
+    IsUniformScale = 16
+    IsSegmentScaleCompensate = 32
+    IsNeedRendering = 64
+    IsLocalMatrixCalculate = 128
+    IsWorldMatrixCalculate = 256
+    HasSkinningMatrix = 512
+
+
 class Bone(StandardObject):
     struct = Struct('iiiiiiiifffffffff' + 'f' * (12*3) + 'ixxxxxxxx')
     name = ''
-    flags = 0
+    flags = BoneFlags(0)
     joint_id = 0
     parent_id = -1
     parent = None
@@ -127,6 +140,10 @@ class Bone(StandardObject):
             self.scale, self.rotation, self.position, self.local, self.world, self.inverse_base,
             self.billboard_mode)
 
+class SkeletonFlags(IntFlag):
+    IsModelCoordinate = 1
+    IsTranslateAnimationEnabled = 2
+
 class SOBJSkeleton(StandardObject):
     struct = Struct('i4siiiiiiiii')
     type = 0x2000000
@@ -137,10 +154,10 @@ class SOBJSkeleton(StandardObject):
     bones: DictInfo[Bone]
     root_bone = None
     scaling_rule = SkeletonScalingRule.Standard
-    flags = 0
+    flags = SkeletonFlags(0)
     def __init__(self):
         self.user_data = DictInfo()
-        self.bones = DictInfo()
+        self.bones: DictInfo[Bone] = DictInfo()
     def values(self):
         return (self.type, self.signature, self.revision, self.name, self.user_data,
             self.bones, Reference(self.root_bone), self.scaling_rule, self.flags)

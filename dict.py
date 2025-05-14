@@ -85,6 +85,8 @@ class DictInfo(InlineObject, Generic[T]):
         self.dict.add(name, data)
     def get(self, name: str) -> T:
         return self.dict.get(name)
+    def len(self) -> int:
+        return self.dict.len()
     def __iter__(self):
         return iter(self.dict)
     def get_index(self, name: str) -> int:
