@@ -34,6 +34,10 @@ class BumpMode(IntEnum):
     AsBump = 1
     AsTangent = 2
 
+class DepthFlag(IntFlag):
+    TestEnabled = 1 # depth read
+    MaskEnabled = 2 # depth write
+
 class PicaCommand(InlineObject):
     struct = Struct('II')
     def __init__(self, param, head):
@@ -70,7 +74,7 @@ class Rasterization(InlineObject):
 
 class DepthOperation(InlineObject):
     struct = Struct('iiiii')
-    flags = 1
+    flags = DepthFlag.MaskEnabled | DepthFlag.TestEnabled
     commands: list[PicaCommand]
     def __init__(self):
         self.commands = [PicaCommand(0x41, 0x10107), PicaCommand(0x3000000, 0x80126)]
