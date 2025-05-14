@@ -96,7 +96,7 @@ class SOBJShape(StandardObject):
             self.primitive_sets, self.base_address, self.vertex_attributes,
             self.blend_shape)
 
-class BoneFlags(IntFlag):
+class BoneFlag(IntFlag):
     IsIdentity = 1
     IsTranslateZero = 2
     IsRotateZero = 4
@@ -112,7 +112,7 @@ class BoneFlags(IntFlag):
 class Bone(StandardObject):
     struct = Struct('iiiiiiiifffffffff' + 'f' * (12*3) + 'ixxxxxxxx')
     name = ''
-    flags = BoneFlags(0)
+    flags = BoneFlag(0)
     joint_id = 0
     parent_id = -1
     parent = None
@@ -140,7 +140,7 @@ class Bone(StandardObject):
             self.scale, self.rotation, self.position, self.local, self.world, self.inverse_base,
             self.billboard_mode)
 
-class SkeletonFlags(IntFlag):
+class SkeletonFlag(IntFlag):
     IsModelCoordinate = 1
     IsTranslateAnimationEnabled = 2
 
@@ -154,7 +154,7 @@ class SOBJSkeleton(StandardObject):
     bones: DictInfo[Bone]
     root_bone = None
     scaling_rule = SkeletonScalingRule.Standard
-    flags = SkeletonFlags(0)
+    flags = SkeletonFlag(0)
     def __init__(self):
         self.user_data = DictInfo()
         self.bones: DictInfo[Bone] = DictInfo()

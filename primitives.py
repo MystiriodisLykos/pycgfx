@@ -33,7 +33,7 @@ class VertexAttributeUsage(IntEnum):
     Interlave = 21
     Quantity = 22
 
-class VertexAttributeFlags(IntFlag):
+class VertexAttributeFlag(IntFlag):
     VertexParam = 1
     Interleave = 2
 
@@ -84,13 +84,13 @@ class PrimitiveSet(StandardObject):
 class VertexAttribute(StandardObject):
     type: int
     usage = VertexAttributeUsage.Position
-    flags = VertexAttributeFlags(0)
+    flags = VertexAttributeFlag(0)
 
 class InterleavedVertexStream(VertexAttribute):
     # padding is written to at runtime
     struct = Struct('iiixxxxiiiiiiii')
     type = 0x40000002
-    flags = VertexAttributeFlags.Interleave
+    flags = VertexAttributeFlag.Interleave
     location_flag = 0
     vertex_stream_data = b''
     location_address = 0
@@ -124,7 +124,7 @@ class VertexStream(VertexAttribute):
 class VertexParamAttribute(VertexAttribute):
     struct = Struct('iiiiifii')
     type = 0x80000000
-    flags = VertexAttributeFlags.VertexParam
+    flags = VertexAttributeFlag.VertexParam
     format_type = DataType.Float
     components_count = 0
     scale = 0

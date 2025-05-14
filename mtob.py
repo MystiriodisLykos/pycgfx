@@ -4,7 +4,7 @@ from struct import Struct
 from txob import TXOB
 from enum import IntEnum, IntFlag
 
-class MTOBFlags(IntFlag):
+class MTOBFlag(IntFlag):
     FragmentLight = 1
     VertexLight = 2
     HemisphereLight = 4
@@ -279,7 +279,7 @@ class MTOB(StandardObject):
     revision = 0x6000000
     name = ''
     user_data: DictInfo
-    flags = MTOBFlags(0)
+    flags = MTOBFlag(0)
     texture_coordinates_config = 0
     transluscency_kind = 0
     material_color: MaterialColor

@@ -3,9 +3,9 @@ from cmdl import CMDL, CMDLWithSkeleton
 from shared import StringTable, Vector3, Vector4
 from dict import DictInfo
 from txob import ImageTexture, PixelBasedImage, ReferenceTexture
-from sobj import SOBJMesh, SOBJShape, SOBJSkeleton, Bone, BillboardMode, BoneFlags, SkeletonFlags
-from primitives import Primitive, PrimitiveSet, InterleavedVertexStream, IndexStream, VertexStream, VertexAttributeUsage, VertexAttributeFlags, DataType, VertexParamAttribute
-from mtob import MTOB, ColorFloat, TexInfo, PicaCommand, LinkedShader, LightingLookupTable, MTOBFlags, ConstantColorSource, BumpMode
+from sobj import SOBJMesh, SOBJShape, SOBJSkeleton, Bone, BillboardMode, BoneFlag, SkeletonFlag
+from primitives import Primitive, PrimitiveSet, InterleavedVertexStream, IndexStream, VertexStream, VertexAttributeUsage, VertexAttributeFlag, DataType, VertexParamAttribute
+from mtob import MTOB, ColorFloat, TexInfo, PicaCommand, LinkedShader, LightingLookupTable, MTOBFlag, ConstantColorSource, BumpMode
 from animation import GraphicsAnimationGroup, AnimationGroupMember, AnimationGroupMemberType
 from luts import LUTS, LutTable
 from cenv import CENV, CENVLight, CENVLightSet
@@ -290,7 +290,7 @@ def make_bones(gltf: gltflib.GLTF, node_ids: list[int], bone_dict: DictInfo[Bone
         bone.name = node.name
         bone_dict.add(bone.name, bone)
         bone.joint_id = node_id
-        bone.flags = BoneFlags.IsNeedRendering | BoneFlags.IsLocalMatrixCalculate | BoneFlags.IsWorldMatrixCalculate
+        bone.flags = BoneFlag.IsNeedRendering | BoneFlag.IsLocalMatrixCalculate | BoneFlag.IsWorldMatrixCalculate
         if bones:
             bone.previous_sibling = bones[-1]
             bones[-1].next_sibling = bone
@@ -304,17 +304,17 @@ def make_bones(gltf: gltflib.GLTF, node_ids: list[int], bone_dict: DictInfo[Bone
             bone.rotation = quat_to_euler(*node.rotation)
         
         if bone.position == Vector3(0, 0, 0):
-            bone.flags |= BoneFlags.IsTranslateZero
+            bone.flags |= BoneFlag.IsTranslateZero
         if bone.scale == Vector3(1, 1, 1):
-            bone.flags |= BoneFlags.IsScaleOne
+            bone.flags |= BoneFlag.IsScaleOne
         if bone.scale.x == bone.scale.y == bone.scale.z:
-            bone.flags |= BoneFlags.IsUniformScale
+            bone.flags |= BoneFlag.IsUniformScale
         if bone.rotation == Vector3(0, 0, 0):
-            bone.flags |= BoneFlags.IsRotateZero
+            bone.flags |= BoneFlag.IsRotateZero
         
-        all_flags = BoneFlags.IsTranslateZero | BoneFlags.IsRotateZero | BoneFlags.IsScaleOne
+        all_flags = BoneFlag.IsTranslateZero | BoneFlag.IsRotateZero | BoneFlag.IsScaleOne
         if (bone.flags & all_flags) == all_flags:
-            bone.flags |= BoneFlags.IsIdentity
+            bone.flags |= BoneFlag.IsIdentity
         
         if node.children:
             child_bones = make_bones(gltf, node.children, bone_dict)
@@ -342,7 +342,7 @@ def convert_gltf(gltf: gltflib.GLTF) -> CGFX:
     while any(n.name == root_bone.name for n in gltf.model.nodes):
         root_bone.name += '_'
     root_bone.joint_id = len(gltf.model.nodes)
-    root_bone.flags = BoneFlags.IsIdentity | BoneFlags.IsNeedRendering
+    root_bone.flags = BoneFlag.IsIdentity | BoneFlag.IsNeedRendering
     cmdl.skeleton.root_bone = root_bone
     cmdl.skeleton.bones.add(root_bone.name, root_bone)
     initial_bones = make_bones(gltf, node_ids, cmdl.skeleton.bones)
@@ -393,7 +393,7 @@ def convert_gltf(gltf: gltflib.GLTF) -> CGFX:
                 base_tex = pmr.baseColorTexture
                 if pmr.baseColorFactor:
                     mtob.material_color.diffuse = ColorFloat(*pmr.baseColorFactor)
-                mtob.flags = MTOBFlags.FragmentLight
+                mtob.flags = MTOBFlag.FragmentLight
                 # mtob.fragment_shader.fragment_lighting_table.distribution_0_sampler = LightingLookupTable()
                 # mtob.fragment_shader.fragment_lighting_table.distribution_0_sampler.sampler.binary_path = 'LutSet'
                 # mtob.fragment_shader.fragment_lighting_table.distribution_0_sampler.sampler.table_name = 'MyLut'
@@ -740,7 +740,7 @@ def make_demo_cgfx() -> CGFX:
     interleaved_vertex_stream = InterleavedVertexStream()
     shape.vertex_attributes.add(interleaved_vertex_stream)
     interleaved_vertex_stream.usage = VertexAttributeUsage.Interlave
-    interleaved_vertex_stream.flags = VertexAttributeFlags.Interleave
+    interleaved_vertex_stream.flags = VertexAttributeFlag.Interleave
     interleaved_vertex_stream.vertex_data_entry_size = 20
     interleaved_vertex_stream.vertex_stream_data = bytes([
         0x00, 0x00, 0x50, 0xC1, 0x00, 0x00, 0xF0, 0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
