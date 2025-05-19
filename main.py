@@ -166,18 +166,19 @@ def make_material_animation(material_animation: GraphicsAnimationGroup, mtob: MT
         if mtob.texture_mappers[i] is None:
             continue
 
-        member = AnimationGroupMember()
-        material_animation.members.add(f'Materials["{mtob.name}"].TextureMappers[{i}].Sampler.BorderColor', member)
-        member.object_type = AnimationGroupMemberType.TextureSampler
-        member.path = f'Materials["{mtob.name}"].TextureMappers[{i}].Sampler.BorderColor'
-        member.member = mtob.name
-        member.blend_operation_index = f'TextureMappers[{i}].Sampler'
-        member.value_offset = 12
-        member.value_size = 16
-        member.field_type = 2
-        member.field_index = i
-        member.value_index = 0
-        member.parent_name = mtob.name
+        # this one seems to crash somtimes when uncommenting it
+        # member = AnimationGroupMember()
+        # material_animation.members.add(f'Materials["{mtob.name}"].TextureMappers[{i}].Sampler.BorderColor', member)
+        # member.object_type = AnimationGroupMemberType.TextureSampler
+        # member.path = f'Materials["{mtob.name}"].TextureMappers[{i}].Sampler.BorderColor'
+        # member.member = mtob.name
+        # member.blend_operation_index = f'TextureMappers[{i}].Sampler'
+        # member.value_offset = 12
+        # member.value_size = 16
+        # member.field_type = 2
+        # member.field_index = i
+        # member.value_index = 0
+        # member.parent_name = mtob.name
         
         member = AnimationGroupMember()
         material_animation.members.add(f'Materials["{mtob.name}"].TextureMappers[{i}].Texture', member)
