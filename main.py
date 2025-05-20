@@ -432,17 +432,18 @@ def convert_gltf(gltf: gltflib.GLTF) -> CGFX:
                     mtob.fragment_shader.texture_combiners[0].combine_rgb = 0
                     mtob.fragment_shader.texture_combiners[0].combine_alpha = 0
                 if material.normalTexture:
-                    # TODO bump texture needs to be inverted (at least partially)
                     tex = gltf.model.textures[material.normalTexture.index]
                     
                     # sampler = gltf.model.samplers[tex.sampler] if tex.sampler is not None else default_sampler
                     tex_info = TexInfo(ReferenceTexture(gltf_get_texture(cgfx, gltf, tex.source, True)))
                     tex_info.sampler.min_filter = 1
+                    tex_info.commands[0].head += 8 * mtob.used_texture_coordinates_count
+                    tex_info.commands[1].head += 8 * mtob.used_texture_coordinates_count + 8 * bool(mtob.used_texture_coordinates_count)
                     mtob.texture_mappers[mtob.used_texture_coordinates_count] = tex_info
                     mtob.texture_coordinators[mtob.used_texture_coordinates_count].source_coordinate = material.normalTexture.texCoord or 0
+                    mtob.fragment_shader.fragment_lighting.bump_texture = mtob.used_texture_coordinates_count
                     mtob.used_texture_coordinates_count += 1
                     mtob.fragment_shader.fragment_lighting.bump_mode = BumpMode.AsBump
-                    mtob.fragment_shader.fragment_lighting.bump_texture = 0
                     mtob.fragment_shader.fragment_lighting.is_bump_renormalize = True
         
         for i, p in enumerate(mesh.primitives):
