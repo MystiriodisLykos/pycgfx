@@ -5,7 +5,7 @@ from dict import DictInfo
 from txob import ImageTexture, PixelBasedImage, ReferenceTexture
 from sobj import SOBJMesh, SOBJShape, SOBJSkeleton, Bone, BillboardMode, BoneFlag, SkeletonFlag
 from primitives import Primitive, PrimitiveSet, InterleavedVertexStream, IndexStream, VertexStream, VertexAttributeUsage, VertexAttributeFlag, DataType, VertexParamAttribute
-from mtob import MTOB, ColorFloat, TexInfo, PicaCommand, LinkedShader, LightingLookupTable, MTOBFlag, ConstantColorSource, BumpMode
+from mtob import MTOB, BlendEquation, BlendFunction, ColorFloat, DepthFlag, TexInfo, PicaCommand, LinkedShader, LightingLookupTable, MTOBFlag, ConstantColorSource, BumpMode
 from animation import GraphicsAnimationGroup, AnimationGroupMember, AnimationGroupMemberType
 from luts import LUTS, LutTable
 from cenv import CENV, CENVLight, CENVLightSet
@@ -382,6 +382,28 @@ def convert_gltf(gltf: gltflib.GLTF) -> CGFX:
                 mtob = MTOB()
                 cmdl.materials.add(material.name, mtob)
                 mtob.name = material.name
+
+                match material.alphaMode:
+                    case "MASK":
+                        mtob.fragment_operations.blend_operation.src_color = BlendFunction.One
+                        mtob.fragment_operations.blend_operation.dst_color = BlendFunction.Zero
+                        mtob.fragment_operations.blend_operation.src_alpha = BlendFunction.One
+                        mtob.fragment_operations.blend_operation.dst_alpha = BlendFunction.Zero
+                        mtob.fragment_shader.alpha_test.enabled = True
+                        if material.alphaCutoff is not None:
+                            mtob.fragment_shader.alpha_test.cutoff = int(material.alphaCutoff * 255)
+                    case "BLEND":
+                        mtob.fragment_operations.blend_operation.src_color = BlendFunction.SrcAlpha
+                        mtob.fragment_operations.blend_operation.dst_color = BlendFunction.InvSrcAlpha
+                        mtob.fragment_operations.blend_operation.src_alpha = BlendFunction.SrcAlpha
+                        mtob.fragment_operations.blend_operation.dst_alpha = BlendFunction.InvSrcAlpha
+                        mtob.fragment_operations.depth_operation.flags = DepthFlag.TestEnabled
+                    case "OPAQUE" | _:
+                        mtob.fragment_operations.blend_operation.src_color = BlendFunction.One
+                        mtob.fragment_operations.blend_operation.dst_color = BlendFunction.Zero
+                        mtob.fragment_operations.blend_operation.src_alpha = BlendFunction.One
+                        mtob.fragment_operations.blend_operation.dst_alpha = BlendFunction.Zero
+
                 # multiply base texture with primary color
                 mtob.fragment_shader.texture_combiners[0].src_rgb = 0x030
                 mtob.fragment_shader.texture_combiners[0].src_alpha = 0x030
@@ -463,10 +485,6 @@ def convert_gltf(gltf: gltflib.GLTF) -> CGFX:
                 vs.components_count = {"SCALAR": 1, "VEC2": 2, "VEC3": 3, "VEC4": 4}[acc.type]
                 vs.format_type = acc.componentType
                 vs.vertex_stream_data = gltf_get_bv_data(gltf, acc.bufferView)
-            # if p.attributes.JOINTS_0 is None:
-            #     param = VertexParamAttribute()
-            #     param.usage = VertexAttributeUsage.BoneIndex
-            #     param.attributes = [0]
 
     visibility_animation = GraphicsAnimationGroup()
     cmdl.animation_group_descriptions.add("VisibilityAnimation", visibility_animation)

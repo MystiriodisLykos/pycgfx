@@ -81,15 +81,48 @@ class DepthOperation(InlineObject):
     def values(self):
         return (self.flags, *self.commands)
 
+class BlendEquation(IntEnum):
+    Add = 0
+    Subtract = 1
+    RevSubtract = 2
+    Minimum = 3
+    Maximum = 4
+
+class BlendFunction(IntEnum):
+    Zero = 0
+    One = 1
+    SrcColor = 2
+    InvSrccolor = 3
+    DstColor = 4
+    InvDstColor = 5
+    SrcAlpha = 6
+    InvSrcAlpha = 7
+    DstAlpha = 8
+    InvDstAlpha = 9
+    ConstColor = 10
+    InvConstColor = 11
+    ConstAlpha = 12
+    InvConstAlpha = 13
+    SrcAlphaSaturate = 14
+
 class BlendOperation(InlineObject):
     struct = Struct('iffffIIIIII')
     mode = 1
     blend = ColorFloat(0, 0, 0, 1)
-    commands: list[PicaCommand]
-    def __init__(self):
-        self.commands = [PicaCommand(0xe40100, 0x803f0100), PicaCommand(0x76760000, 0), PicaCommand(0xff000000, 0)]
+    equation_color = BlendEquation.Add
+    equation_alpha = BlendEquation.Add
+    src_color = BlendFunction.One
+    dst_color = BlendFunction.Zero
+    src_alpha = BlendFunction.One
+    dst_alpha = BlendFunction.Zero
     def values(self):
-        return (self.mode, self.blend, *self.commands)
+        return (self.mode, self.blend,
+                PicaCommand(0xe40100, 0x803f0100),
+                PicaCommand(
+                    self.equation_color | (self.equation_alpha << 8) |
+                    (self.src_color << 16) | (self.dst_color << 20) |
+                    (self.src_alpha << 24) | (self.dst_alpha << 28), 0),
+                PicaCommand(int.from_bytes(bytes(self.blend.as_byte().values()), 'little'), 0))
 
 class FragmentOperation(InlineObject):
     struct = Struct(DepthOperation.struct.format + BlendOperation.struct.format + 'IIII')
@@ -175,10 +208,18 @@ class LinkedShader(SHDR):
     def values(self):
         return super().values() + (self.reference_shader_name,)
 
+class FragmentLightingFlags(IntFlag):
+    ClampHighLight = 1
+    UseDistribution0 = 2
+    UseDistribution1 = 4
+    UseGeometricFactor0 = 8
+    UseGeometricFactor1 = 16
+    UseReflection = 32
+
 class FragmentLighting(InlineObject):
     struct = Struct('iiiiii')
-    flags = 0
-    layer_config = 0
+    flags = FragmentLightingFlags(0)
+    layer_config = 0 # bits 4-7 of GPUREG_LIGHTING_CONFIG0
     fresnel_config = FresnelConfig(0)
     bump_texture = 0
     bump_mode = BumpMode.NotUsed
@@ -253,27 +294,46 @@ class TextureCombiner(InlineObject):
             self.tev_ops, self.combine_rgb, self.combine_alpha,
             self.scale_rgb, self.scale_alpha)
 
+class AlphaTestFunction(IntEnum):
+    Never = 0
+    Always = 1
+    Equal = 2
+    NotEqual = 3
+    Less = 4
+    LessEqual = 5
+    Greater = 6
+    GreaterEqual = 7
+
+class AlphaTest(InlineObject):
+    enabled = False
+    function = AlphaTestFunction.GreaterEqual
+    cutoff = 128
+    def values(self):
+        return (PicaCommand(self.enabled | (self.function << 4) | (self.cutoff << 8), 0xf0104),)
+
 class FragmentShader(StandardObject):
     struct = Struct('ffff' + FragmentLighting.struct.format + 'i' + TextureCombiner.struct.format * 6 + 'IIIIIIII')
     buffer_color: ColorFloat
     fragment_lighting: FragmentLighting
     fragment_lighting_table: FragmentLightingTable
     texture_combiners: list[TextureCombiner]
-    alpha_test_command: PicaCommand
+    alpha_test: AlphaTest
     buffer_commands: list[PicaCommand]
     def __init__(self):
         self.buffer_color = ColorFloat(0, 0, 0, 0)
         self.fragment_lighting = FragmentLighting()
         self.fragment_lighting_table = FragmentLightingTable()
         self.texture_combiners = [TextureCombiner(i) for i in range(6)]
-        self.alpha_test_command = PicaCommand(0x10, 0xf0104)
+        self.alpha_test = AlphaTest()
         self.buffer_commands = [
             PicaCommand(0xff000000, 0xf00fd), PicaCommand(0, 0x200e0),
             PicaCommand(0x400, 0x201c3)
         ]
     def values(self):
         return (self.buffer_color, self.fragment_lighting, self.fragment_lighting_table,
-            *self.texture_combiners, self.alpha_test_command, *self.buffer_commands)
+            *self.texture_combiners,
+            self.alpha_test,
+            *self.buffer_commands)
 
 class MTOB(StandardObject):
     # padding is written to at runtime
@@ -305,7 +365,7 @@ class MTOB(StandardObject):
         self.rasterization = Rasterization()
         self.fragment_operations = FragmentOperation()
         self.texture_coordinators = [TextureCoordinator() for _ in range(3)]
-        self.texture_mappers = [None, None, None, None]
+        self.texture_mappers: list[TexInfo] = [None, None, None, None]
         self.shader = LinkedShader()
         self.fragment_shader = FragmentShader()
     def values(self):
