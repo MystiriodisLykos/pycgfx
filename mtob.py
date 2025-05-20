@@ -333,37 +333,37 @@ class MTOB(StandardObject):
             self.fragment_operations_hash())
     def shading_parameters_hash(self):
         # TODO
-        return 0xda5de5cd
+        return 0
     def shader_parameters_hash(self):
         # TODO
-        return 0x3b75655e
+        return 0
     def texture_coordinators_hash(self):
         # TODO
-        return 0xf43df7f4
+        return 0
     def texture_samplers_hash(self):
         # TODO
-        return 0x9ae75b22
+        return 0
     def material_color_hash(self):
         # TODO
-        return 0x66f7700c
+        return 0
     def rasterization_hash(self):
         # TODO
-        return 0xc06ac8f4
+        return 0
     def fragment_lighting_hash(self):
         # TODO
-        return 0xe0099c31
+        return 0
     def fragmnent_lighting_table_parameters_hash(self):
         # TODO
-        return 0x3b75655e
+        return 0
     def texture_combiners_hash(self):
         # TODO
-        return 0x3582016c
+        return 0
     def alpha_test_hash(self):
         # TODO
-        return 0x640102f8
+        return 0
     def fragment_operations_hash(self):
         # TODO
-        return 0xcdf201a2
+        return 0
 
 
     
