@@ -1,6 +1,6 @@
 from cgfx import CGFX
 from cmdl import CMDL, CMDLWithSkeleton
-from shared import StringTable, Vector3, Vector4
+from shared import StringTable, Vector3, Vector4, Matrix
 from dict import DictInfo
 from txob import ImageTexture, PixelBasedImage, ReferenceTexture
 from sobj import SOBJMesh, SOBJShape, SOBJSkeleton, Bone, BillboardMode, BoneFlag, SkeletonFlag
@@ -297,13 +297,29 @@ def make_bones(gltf: gltflib.GLTF, node_ids: list[int], bone_dict: DictInfo[Bone
             bones[-1].next_sibling = bone
         bones.append(bone)
 
-        if node.translation:
-            bone.position = Vector3(*node.translation)
-        if node.scale:
-            bone.scale = Vector3(*node.scale)
-        if node.rotation:
-            bone.rotation = quat_to_euler(*node.rotation)
-        
+        if node.matrix:
+            bone.position = Vector3(node.matrix[12], node.matrix[13], node.matrix[14])
+            bone.scale = Vector3(math.hypot(*node.matrix[:3]), math.hypot(*node.matrix[4:7]), math.hypot(*node.matrix[8:11]))
+            
+            if abs(node.matrix[2]) != 1:
+                rot_y = -math.asin(node.matrix[2] / bone.scale.x)
+                rot_x = math.atan2(node.matrix[6] / math.cos(rot_y), node.matrix[10] / math.cos(rot_y))
+                rot_z = math.atan2(node.matrix[1] / math.cos(rot_y), node.matrix[0] / math.cos(rot_y))
+            else:
+                rot_z = 0
+                if node.matrix[2] == -1:
+                    rot_y = math.pi / 2
+                    rot_x = math.atan(node.matrix[4], node.matrix[8])
+            bone.rotation = Vector3(rot_x, rot_y, rot_z)
+
+        else:
+            if node.translation:
+                bone.position = Vector3(*node.translation)
+            if node.scale:
+                bone.scale = Vector3(*node.scale)
+            if node.rotation:
+                bone.rotation = quat_to_euler(*node.rotation)
+            
         if bone.position == Vector3(0, 0, 0):
             bone.flags |= BoneFlag.IsTranslateZero
         if bone.scale == Vector3(1, 1, 1):
