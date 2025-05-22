@@ -458,7 +458,7 @@ def convert_gltf(gltf: gltflib.GLTF) -> CGFX:
                 mtob.fragment_shader.fragment_lighting_table.distribution_0_sampler.sampler.table_name = mtob.name
                 roughness_factor = pmr.roughnessFactor if pmr.roughnessFactor is not None else 1
                 mtob.material_color.constant[0] = ColorFloat(*([1-0.9*roughness_factor]*3), 1)
-                lut = LutTable.phong(200/(1+roughness_factor*100))
+                lut = LutTable.phong(4*200/(1+roughness_factor*100))
                 luts.tables.add(mtob.name, lut)
 
                 if base_tex:
