@@ -5,7 +5,7 @@ from dict import DictInfo
 from txob import ImageTexture, PixelBasedImage, ReferenceTexture
 from sobj import SOBJMesh, SOBJShape, SOBJSkeleton, Bone, BillboardMode, BoneFlag, SkeletonFlag
 from primitives import Primitive, PrimitiveSet, InterleavedVertexStream, IndexStream, VertexStream, VertexAttributeUsage, VertexAttributeFlag, DataType, VertexParamAttribute
-from mtob import MTOB, BlendEquation, BlendFunction, ColorFloat, DepthFlag, TexInfo, PicaCommand, LinkedShader, LightingLookupTable, MTOBFlag, ConstantColorSource, BumpMode
+from mtob import MTOB, BlendEquation, BlendFunction, ColorFloat, DepthFlag, TexInfo, PicaCommand, LinkedShader, LightingLookupTable, MTOBFlag, ConstantColorSource, BumpMode, FragmentLightingFlags
 from animation import GraphicsAnimationGroup, AnimationGroupMember, AnimationGroupMemberType
 from luts import LUTS, LutTable
 from cenv import CENV, CENVLight, CENVLightSet
@@ -347,6 +347,10 @@ def convert_gltf(gltf: gltflib.GLTF) -> CGFX:
 
     cgfx = CGFX()
 
+    luts = LUTS()
+    luts.name = 'LutSet'
+    cgfx.data.lookup_tables.add('LutSet', luts)
+
     cmdl = CMDLWithSkeleton()
     cgfx.data.models.add("COMMON", cmdl)
     cmdl.name = "COMMON"
@@ -436,14 +440,27 @@ def convert_gltf(gltf: gltflib.GLTF) -> CGFX:
                 # multiply with diffuse lighting
                 mtob.fragment_shader.texture_combiners[1].src_rgb = 0x0f1
                 mtob.fragment_shader.texture_combiners[1].combine_rgb = 1
+                # add specular lighting
+                mtob.fragment_shader.texture_combiners[2].src_rgb = 0xfe2
+                mtob.fragment_shader.texture_combiners[2].combine_rgb = 8
+                mtob.fragment_shader.texture_combiners[2].constant = ConstantColorSource.Constant0
+
+                mtob.flags = MTOBFlag.FragmentLight
                 pmr = material.pbrMetallicRoughness or gltflib.PBRMetallicRoughness()
                 base_tex = pmr.baseColorTexture
                 if pmr.baseColorFactor:
                     mtob.material_color.diffuse = ColorFloat(*pmr.baseColorFactor)
-                mtob.flags = MTOBFlag.FragmentLight
-                # mtob.fragment_shader.fragment_lighting_table.distribution_0_sampler = LightingLookupTable()
-                # mtob.fragment_shader.fragment_lighting_table.distribution_0_sampler.sampler.binary_path = 'LutSet'
-                # mtob.fragment_shader.fragment_lighting_table.distribution_0_sampler.sampler.table_name = 'MyLut'
+
+                # specular
+                mtob.fragment_shader.fragment_lighting.flags = FragmentLightingFlags.UseDistribution0
+                mtob.fragment_shader.fragment_lighting_table.distribution_0_sampler = LightingLookupTable()
+                mtob.fragment_shader.fragment_lighting_table.distribution_0_sampler.sampler.binary_path = 'LutSet'
+                mtob.fragment_shader.fragment_lighting_table.distribution_0_sampler.sampler.table_name = mtob.name
+                roughness_factor = pmr.roughnessFactor if pmr.roughnessFactor is not None else 1
+                mtob.material_color.constant[0] = ColorFloat(*([1-0.9*roughness_factor]*3), 1)
+                lut = LutTable.phong(200/(1+roughness_factor*100))
+                luts.tables.add(mtob.name, lut)
+
                 if base_tex:
                     tex = gltf.model.textures[base_tex.index]
                     # sampler = gltf.model.samplers[tex.sampler] if tex.sampler is not None else default_sampler
@@ -679,13 +696,6 @@ def convert_gltf(gltf: gltflib.GLTF) -> CGFX:
     # member.value_size = 1
     # member.unknown = 4
     # member.field_type = 12
-
-    # luts = LUTS()
-    # luts.name = 'LutSet'
-    # cgfx.data.lookup_tables.add('LutSet', luts)
-    # lut_info = LutTable()
-    # lut_info.name = 'MyLut'
-    # luts.tables.add('MyLut', lut_info)
     
     return cgfx
 

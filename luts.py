@@ -9,7 +9,7 @@ def generate_lut_commands(lut: list[float]) -> bytes:
     diffs = [min(int(abs(j - i) * 0x800), 0x7ff) for i, j in zip(lut, lut[1:])] + [0]
     fixed = [((d << 12) | v).to_bytes(4, 'little') for v, d in zip(values, diffs)]
     assert len(fixed) == 256
-    return fixed[0] + command + b''.join(fixed[1:129]) + command + b''.join(fixed[129:])
+    return fixed[0] + command + b''.join(fixed[1:128]) + b'\0' * 4 + fixed[128] + command + b''.join(fixed[129:]) + b'\0' * 4
 
 class LutTable(StandardObject):
     struct = Struct('Iiiii')
@@ -17,10 +17,13 @@ class LutTable(StandardObject):
     name = ''
     some_bool = True
     lut: list[float]
-    def __init__(self):
-        self.lut = [1-abs(i/128) for i in range(-128, 128)]
+    def __init__(self, lut=None):
+        self.lut = lut or [1-abs(i/128) for i in range(-128, 128)]
     def values(self):
         return (self.type, self.name, self.some_bool, generate_lut_commands(self.lut))
+    @staticmethod
+    def phong(shininess) -> 'LutTable':
+        return LutTable([pow(i / 256, shininess) for i in range(256)])
 
 
 class LUTS(StandardObject):
@@ -30,7 +33,7 @@ class LUTS(StandardObject):
     revision = 0x04000000
     name = ''
     user_data: DictInfo
-    info: DictInfo
+    tables: DictInfo[LutTable]
     def __init__(self):
         self.user_data = DictInfo()
         self.tables = DictInfo()

@@ -55,7 +55,7 @@ class MaterialColor(InlineObject):
     constant: list[ColorFloat]
     command_cache = 0
     def __init__(self):
-        self.specular = [ColorFloat(0.33, 0.33, 0.33, 0), ColorFloat(0, 0, 0, 0)]
+        self.specular = [ColorFloat(1, 1, 1, 0), ColorFloat(0, 0, 0, 0)]
         self.constant = [ColorFloat(0, 0, 0, 0) for _ in range(6)]
     def values(self):
         return (self.emission, self.ambient, self.diffuse, *self.specular, *self.constant,
@@ -241,8 +241,8 @@ class ReferenceLookupTable(StandardObject):
 
 class LightingLookupTable(StandardObject):
     struct = Struct('iii')
-    input_command = 0
-    scale_command = 1
+    input_command = 0 # GPUREG_LIGHTING_LUTINPUT_SELECT value
+    scale_command = 0 # GPUREG_LIGHTING_LUTINPUT_SCALE value
     sampler: ReferenceLookupTable
     def __init__(self):
         self.sampler = ReferenceLookupTable()
