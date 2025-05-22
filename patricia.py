@@ -60,9 +60,6 @@ class PatTree:
         while current.name != name and current.refbit > current.left.refbit:
             current = current.right if get_bit(name, current.refbit) else current.left
         return current
-    
-    def sort(self):
-        self.nodes = sorted(self.nodes, key=lambda n: (len(n.name), n.name.rstrip('\0')))
 
 def generate(names: list[str]) -> PatTree:
     tree = PatTree(max(len(n) for n in names))

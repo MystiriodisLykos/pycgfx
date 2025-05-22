@@ -64,7 +64,6 @@ class DICT(StandardObject, Generic[T]):
         self.regenerate()
 
     def regenerate(self):
-        self.nodes[1:] = sorted(self.nodes[1:], key=lambda n: (-len(n.get_name()), n.get_name()))
         tree = patricia.generate([n.get_name() for n in self.nodes if n != self.nodes[0]])
         tree.root.idx_entry = -1
         for n in self.nodes:

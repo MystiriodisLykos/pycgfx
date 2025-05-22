@@ -348,6 +348,14 @@ def convert_gltf(gltf: gltflib.GLTF) -> CGFX:
     cmdl.skeleton.bones.add(root_bone.name, root_bone)
     initial_bones = make_bones(gltf, node_ids, cmdl.skeleton.bones)
 
+    # sort bones based on how many transluscent materials they use
+    def sort_key(node):
+        node = gltf.model.nodes[node.content.joint_id]
+        if node.mesh is None: return 0
+        mesh = gltf.model.meshes[node.mesh]
+        return sum(1 for p in mesh.primitives if p.material is not None and gltf.model.materials[p.material].alphaMode == "BLEND") / len(mesh.primitives)
+    cmdl.skeleton.bones.dict.nodes[2:] = sorted(cmdl.skeleton.bones.dict.nodes[2:], key=sort_key)
+
     # clean up joint ids
     node_to_bone = {}
     bone_to_node = {}
