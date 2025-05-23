@@ -29,21 +29,14 @@ class PatTree:
         new_node = Node()
         new_node.name = name
         new_node.idx_entry = index
-        current = self.root
-        left = current.left
-        while current.refbit > left.refbit:
-            current = left
-            left = current.right if get_bit(name, current.refbit) else current.left
+        
+        left = self.get(name)
 
         bit = self.string_length * 8 - 1
         while get_bit(left.name, bit) == get_bit(name, bit):
             bit -= 1
 
-        current = self.root
-        left = current.left
-        while current.refbit > left.refbit and left.refbit > bit:
-            current = left
-            left = current.right if get_bit(name, current.refbit) else current.left
+        left, current = self.get_with_parent(name, bit)
         
         new_node.refbit = bit
         new_node.left = left if get_bit(name, bit) else new_node
@@ -55,14 +48,19 @@ class PatTree:
         return new_node
     
     def get(self, name: str) -> Node:
+        return self.get_with_parent(name)[0]
+    
+    def get_with_parent(self, name: str, minbit=-1) -> tuple[Node]:
         name = name.ljust(self.string_length, '\0')
         current = self.root
-        while current.name != name and current.refbit > current.left.refbit:
-            current = current.right if get_bit(name, current.refbit) else current.left
-        return current
+        left = current.left
+        while current.refbit > left.refbit and left.refbit > minbit:
+            current = left
+            left = current.right if get_bit(name, current.refbit) else current.left
+        return (left, current)
 
 def generate(names: list[str]) -> PatTree:
     tree = PatTree(max(len(n) for n in names))
-    for i,n in enumerate(names):
+    for i,n in sorted(enumerate(names), key=lambda k: -len(k[1])):
         tree.add(n, i)
     return tree

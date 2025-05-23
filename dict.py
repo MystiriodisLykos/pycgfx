@@ -68,6 +68,7 @@ class DICT(StandardObject, Generic[T]):
         tree.root.idx_entry = -1
         for n in self.nodes:
             p = tree.get(n.get_name())
+            assert p.name == n.get_name().ljust(tree.string_length, '\0'), f"{p.name}, {n.get_name()}"
             if n != self.nodes[0]: n.refbit = p.refbit
             n.left_index = p.left.idx_entry + 1
             n.right_index = p.right.idx_entry + 1
