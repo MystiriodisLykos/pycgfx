@@ -875,7 +875,7 @@ struct CANMBone {
         padding[12];
     } else if (primitiveType == PrimitiveType::TransformQuaternion) {
         if (flags & 0x10) padding[4];
-        else u32 rotationOffset;
+        else RelPtr<QuaternionCurve> rotationOffset;
         if (flags & 0x08) padding[4];
         else RelPtr<Vector3Curve> translation;
         if (flags & 0x20) padding[4];

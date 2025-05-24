@@ -5,6 +5,7 @@ from cmdl import CMDL
 from txob import TXOB
 from mtob import MTOB
 from cflt import CFLT
+from canm import CANM
 
 
 class CGFXHeader(InlineObject):
@@ -29,6 +30,9 @@ class CGFXData(InlineObject):
     textures: DictInfo[TXOB]
     materials: DictInfo[MTOB]
     lights: DictInfo[CFLT]
+    skeletal_animations: DictInfo[CANM]
+    material_animations: DictInfo[CANM]
+    visibility_animations: DictInfo[CANM]
     def __init__(self) -> None:
         super().__init__()
         self.models = DictInfo()
