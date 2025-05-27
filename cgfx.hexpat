@@ -383,6 +383,7 @@ struct Sampler {
     u32 type;
     char *ownerOffset: s32 [[pointer_base("std::ptr::relative_to_pointer")]];
     u32 minFilter;
+    ColorFloat borderColor;
 } [[inline]];
 
 struct TexInfo {

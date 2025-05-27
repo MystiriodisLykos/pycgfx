@@ -160,14 +160,16 @@ class TextureCoordinator(InlineObject):
             self.translate_u, self.translate_v, self.should_generate_matrix, self.transform_matrix)
 
 class TextureSampler(StandardObject):
-    struct = Struct('Iii')
+    struct = Struct('Iiiffff')
     type = 0x80000000
     owner: "TexInfo"
     min_filter = 0
+    border_color: ColorFloat
     def __init__(self, owner):
         self.owner = owner
+        self.border_color = ColorFloat(0, 0, 0, 0)
     def values(self):
-        return (self.type, Reference(self.owner), self.min_filter)
+        return (self.type, Reference(self.owner), self.min_filter, self.border_color)
 
 class TexInfo(StandardObject):
     struct = Struct('Iiii' + 'I' * 14 + 'i')
