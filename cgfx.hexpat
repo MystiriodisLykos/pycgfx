@@ -796,16 +796,108 @@ enum PrimitiveType: u32 {
     TransformMatrix,
 };
 
+enum RepeatMethod: u8 {
+    Clamp,
+    Repeat,
+    MirroredRepeat,
+    Repeat2, // functions exactly the same as Repeat
+};
+
 struct AnimationCurve {
     float startFrame, endFrame;
-    u8 preRepeatMethod, postRepeatMethod;
+    RepeatMethod preRepeatMethod, postRepeatMethod;
     padding[2];
     u32 flags;
 };
 
+enum QuantizationType: u32 {
+    Hermite128,
+    Hermite64,
+    Hermite48,
+    UnifiedHermite96,
+    UnifiedHermite48,
+    UnifiedHermite32,
+    StepLinear64,
+    StepLinear32
+};
+
+bitfield FloatSegmentFlags {
+    bool single: 1;
+    padding: 1;
+    unsigned interp: 3;
+    QuantizationType quanti: 3;
+    padding: 24;
+};
+
+struct Hermite128Key {
+    float frame;
+    float value;
+    float inSlope;
+    float outSlope;
+};
+
+struct Hermite64Key {
+    u32 frameValue;
+    u16 inSlope; // 8 fractional bits
+    u16 outSlope; // 8 fractional bits
+};
+
+struct Hermite48Key {
+    u8 frameValue[3];
+    u8 inOutSlope[3];
+};
+
+struct UnifiedHermite96Key {
+    float frame;
+    float value;
+    float inOutSlope;
+};
+
+struct UnifiedHermite48Key {
+    u16 frame; // 8 fractional bits
+    u16 value;
+    u16 inOutSlope; // 8 fractional bits
+};
+
+struct UnifiedHermite32Key {
+    u8 frame;
+    u8 valueSlope[3];
+};
+
+struct StepLinear64Key {
+    float frame;
+    float value;
+};
+
+struct StepLinear32Key {
+    u24 frame;
+    u8 value;
+};
+
 struct FloatSegment {
     float startFrame, endFrame;
-    u32 flags;
+    FloatSegmentFlags flags;
+    if (flags.single) {
+        float singleValue;
+    } else {
+        u32 keyCount;
+        float speed;
+        if (flags.quanti != QuantizationType::Hermite128 && flags.quanti != QuantizationType::StepLinear64 && flags.quanti != QuantizationType::UnifiedHermite96) {
+            float scale;
+            float offset;
+            float frame_scale;
+        }
+        match (flags.quanti) {
+            (QuantizationType::Hermite128): Hermite128Key keys[keyCount];
+            (QuantizationType::Hermite64): Hermite64Key keys[keyCount];
+            (QuantizationType::Hermite48): Hermite48Key keys[keyCount];
+            (QuantizationType::UnifiedHermite96): UnifiedHermite96Key keys[keyCount];
+            (QuantizationType::UnifiedHermite48): UnifiedHermite48Key keys[keyCount];
+            (QuantizationType::UnifiedHermite32): UnifiedHermite32Key keys[keyCount];
+            (QuantizationType::StepLinear64): StepLinear64Key keys[keyCount];
+            (QuantizationType::StepLinear32): StepLinear32Key keys[keyCount];
+        }
+    }
 };
 
 struct FloatAnimationCurve {
@@ -844,24 +936,10 @@ struct QuaternionCurve {
     QuaternionAndFlags values[curve.endFrame - curve.startFrame];
 };
 
-struct ColorSegment {
-    FloatSegment floatSegment;
-    u16 count;
-    padding[2];
-    float;
-    std::Array<float, 4> data[count];
-};
-
-struct ColorAnimationCurve {
-    AnimationCurve curve;
-    u32 nrSegments;
-    RelPtr<ColorSegment> segments[nrSegments];
-};
-
 struct CANMBone {
     u32 flags;
     RelPtr<NullString> bonePath;
-    // these next two only if revision < 0x07000000
+    // these next two appear to be unused
     RelPtr<NullString> unknown1;
     RelPtr<NullString> unknown2;
     PrimitiveType primitiveType;
@@ -873,7 +951,41 @@ struct CANMBone {
         else if (flags & 8) padding[4];
         else RelPtr<FloatAnimationCurve> yVal;
     } else if (primitiveType == PrimitiveType::Transform) {
-        padding[12];
+        if (flags & 0x10000) padding[4];
+        else if (flags & 0x40) float scale_x;
+        else RelPtr<FloatAnimationCurve> scale_x;
+
+        if (flags & 0x20000) padding[4];
+        else if (flags & 0x80) float scale_y;
+        else RelPtr<FloatAnimationCurve> scale_y;
+        
+        if (flags & 0x40000) padding[4];
+        else if (flags & 0x100) float scale_z;
+        else RelPtr<FloatAnimationCurve> scale_z;
+        
+        if (flags & 0x80000) padding[4];
+        else if (flags & 0x200) float rot_x;
+        else RelPtr<FloatAnimationCurve> rot_x;
+        
+        if (flags & 0x100000) padding[4];
+        else if (flags & 0x400) float rot_y;
+        else RelPtr<FloatAnimationCurve> rot_y;
+        
+        if (flags & 0x200000) padding[4];
+        else if (flags & 0x800) float rot_z;
+        else RelPtr<FloatAnimationCurve> rot_z;
+        
+        if (flags & 0x800000) padding[4];
+        else if (flags & 0x2000) float pos_x;
+        else RelPtr<FloatAnimationCurve> pos_x;
+        
+        if (flags & 0x1000000) padding[4];
+        else if (flags & 0x4000) float pos_y;
+        else RelPtr<FloatAnimationCurve> pos_y;
+        
+        if (flags & 0x2000000) padding[4];
+        else if (flags & 0x8000) float pos_z;
+        else RelPtr<FloatAnimationCurve> pos_z;
     } else if (primitiveType == PrimitiveType::TransformQuaternion) {
         if (flags & 0x10) padding[4];
         else RelPtr<QuaternionCurve> rotationOffset;
@@ -885,22 +997,22 @@ struct CANMBone {
         if (flags & 0x10) {
             padding[4];
         } else {
-            RelPtr<ColorAnimationCurve> redCurve;
+            RelPtr<FloatAnimationCurve> redCurve;
         }
         if (flags & 0x20) {
             padding[4];
         } else {
-            RelPtr<ColorAnimationCurve> greenCurve;
+            RelPtr<FloatAnimationCurve> greenCurve;
         }
         if (flags & 0x40) {
             padding[4];
         } else {
-            RelPtr<ColorAnimationCurve> blueCurve;
+            RelPtr<FloatAnimationCurve> blueCurve;
         }
         if (flags & 0x80) {
             padding[4];
         } else {
-            RelPtr<ColorAnimationCurve> alphaCurve;
+            RelPtr<FloatAnimationCurve> alphaCurve;
         }
     }
 } [[inline]];
