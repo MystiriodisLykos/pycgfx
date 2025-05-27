@@ -288,7 +288,7 @@ def make_bones(gltf: gltflib.GLTF, node_ids: list[int], bone_dict: DictInfo[Bone
     for node_id in node_ids:
         node = gltf.model.nodes[node_id]
         bone = Bone()
-        bone.name = node.name
+        bone.name = node.name or f'Node {node_id}'
         bone_dict.add(bone.name, bone)
         bone.joint_id = node_id
         bone.flags = BoneFlag.IsNeedRendering | BoneFlag.IsLocalMatrixCalculate | BoneFlag.IsWorldMatrixCalculate
