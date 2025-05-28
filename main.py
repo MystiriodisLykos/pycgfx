@@ -511,6 +511,8 @@ def convert_gltf(gltf: gltflib.GLTF) -> CGFX:
                     mtob.fragment_shader.fragment_lighting.is_bump_renormalize = True
         
         for i, p in enumerate(mesh.primitives):
+            if p.mode is not None and p.mode != 4:
+                raise RuntimeError("only triangle list primitives are currently supported")
             sobj_mesh = SOBJMesh(cmdl)
             cmdl.meshes.add(sobj_mesh)
             sobj_mesh.name = (mesh.name or list(cmdl.skeleton.bones)[node_to_bone[node_id]]) + '_' + mtob.name
