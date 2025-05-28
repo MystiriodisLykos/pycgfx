@@ -3,6 +3,7 @@ from dict import DictInfo
 from struct import Struct
 from txob import TXOB
 from enum import IntEnum, IntFlag
+import itertools
 
 class MTOBFlag(IntFlag):
     FragmentLight = 1
@@ -403,8 +404,8 @@ class MTOB(StandardObject):
         # TODO
         return 0
     def texture_samplers_hash(self):
-        # TODO
-        return 0
+        # used to calculate texture mappers hash
+        return hash(tuple(v for v in itertools.chain.from_iterable(m.flat_values() for m in self.texture_mappers if m is not None) if not isinstance(v, StandardObject))) & 0xffffffff
     def material_color_hash(self):
         # TODO
         return 0
@@ -415,8 +416,8 @@ class MTOB(StandardObject):
         # TODO
         return 0
     def fragmnent_lighting_table_parameters_hash(self):
-        # TODO
-        return 0
+        # used to calculate fragment lighting table hash
+        return hash(tuple(v for v in itertools.chain.from_iterable(m.values() for m in self.fragment_shader.fragment_lighting_table.values() if m) if not isinstance(v, StandardObject))) & 0xffffffff
     def texture_combiners_hash(self):
         # TODO
         return 0
