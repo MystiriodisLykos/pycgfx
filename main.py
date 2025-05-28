@@ -530,6 +530,12 @@ def convert_gltf(gltf: gltflib.GLTF) -> CGFX:
                 index_stream = IndexStream()
                 index_stream.data_type = indices.componentType
                 index_stream.face_data = gltf_get_accessor_data_raw(gltf, indices)
+                if material.doubleSided:
+                    # duplicate all vertices backwards
+                    rev = reversed(gltf_get_accessor_data_vertices(gltf, indices))
+                    acc_id = list(v for k, v in p.attributes.__dict__.items() if v is not None)[0]
+                    count = len(gltf_get_accessor_data_vertices(gltf, gltf.model.accessors[acc_id]))
+                    index_stream.face_data += b''.join((int.from_bytes(b, 'little') + count).to_bytes(len(b), 'little') for b in rev)
                 primitive.index_streams.add(index_stream)
                 primitive.buffer_objects.add(0)
             for ty, acc_id in p.attributes.__dict__.items():
@@ -552,6 +558,13 @@ def convert_gltf(gltf: gltflib.GLTF) -> CGFX:
                 vs.components_count = {"SCALAR": 1, "VEC2": 2, "VEC3": 3, "VEC4": 4}[acc.type]
                 vs.format_type = acc.componentType
                 vs.vertex_stream_data = gltf_get_accessor_data_raw(gltf, acc)
+                if material.doubleSided:
+                    # duplicate all vertices but with the normals reversed
+                    verts = gltf_get_accessor_data_raw(gltf, acc)
+                    if ty != "NORMAL":
+                        vs.vertex_stream_data += verts
+                    else:
+                        vs.vertex_stream_data += bytes([v ^ (0x80 * (i % 4 == 3)) for i, v in enumerate(verts)])
 
     visibility_animation = GraphicsAnimationGroup()
     cmdl.animation_group_descriptions.add("VisibilityAnimation", visibility_animation)
