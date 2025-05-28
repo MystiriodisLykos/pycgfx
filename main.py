@@ -257,6 +257,15 @@ def gltf_get_bv_data(gltf: gltflib.GLTF, bv_id: int) -> bytes:
         buf_res = gltf.get_resource(buf.uri)
     return buf_res.data[bv.byteOffset:bv.byteOffset+bv.byteLength]
 
+def gltf_get_accessor_data_raw(gltf: gltflib.GLTF, acc: gltflib.Accessor) -> bytes:
+    bv = gltf.model.bufferViews[acc.bufferView]
+    bv_data = gltf_get_bv_data(gltf, acc.bufferView)
+    start = acc.byteOffset or 0
+    component_sizes = {5120: 1, 5121: 1, 5122: 2, 5123: 2, 5125: 4, 5126: 4}
+    type_sizes = {'SCALAR': 1, 'VEC2': 2, 'VEC3': 3, 'VEC4': 4, 'MAT2': 4, 'MAT3': 9, 'MAT4': 16}
+    element_size = bv.byteStride or (component_sizes[acc.componentType] * type_sizes[acc.type])
+    return bv_data[start:start+acc.count*element_size]
+
 def gltf_get_texture(cgfx: CGFX, gltf: gltflib.GLTF, image_id: int, normal: bool = False) -> ImageTexture:
     image = gltf.model.images[image_id]
     tex_name = image.name or image.uri or f'image{image_id}'
@@ -504,7 +513,7 @@ def convert_gltf(gltf: gltflib.GLTF) -> CGFX:
                 indices = gltf.model.accessors[p.indices]
                 index_stream = IndexStream()
                 index_stream.data_type = indices.componentType
-                index_stream.face_data = gltf_get_bv_data(gltf, indices.bufferView)
+                index_stream.face_data = gltf_get_accessor_data_raw(gltf, indices)
                 primitive.index_streams.add(index_stream)
                 primitive.buffer_objects.add(0)
             for ty, acc_id in p.attributes.__dict__.items():
@@ -526,7 +535,7 @@ def convert_gltf(gltf: gltflib.GLTF) -> CGFX:
                 shape.vertex_attributes.add(vs)
                 vs.components_count = {"SCALAR": 1, "VEC2": 2, "VEC3": 3, "VEC4": 4}[acc.type]
                 vs.format_type = acc.componentType
-                vs.vertex_stream_data = gltf_get_bv_data(gltf, acc.bufferView)
+                vs.vertex_stream_data = gltf_get_accessor_data_raw(gltf, acc)
 
     visibility_animation = GraphicsAnimationGroup()
     cmdl.animation_group_descriptions.add("VisibilityAnimation", visibility_animation)
