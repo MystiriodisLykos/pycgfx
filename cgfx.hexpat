@@ -792,7 +792,7 @@ enum PrimitiveType: u32 {
     Transform,
     RgbaColor,
     Texture,
-    TransformQuaternion,
+    BakedTransform,
     TransformMatrix,
 };
 
@@ -810,6 +810,12 @@ struct AnimationCurve {
     u32 flags;
 };
 
+enum Interpolation: u32 {
+    Nearest,
+    Linear,
+    CSpline,
+};
+
 enum QuantizationType: u32 {
     Hermite128,
     Hermite64,
@@ -824,7 +830,7 @@ enum QuantizationType: u32 {
 bitfield FloatSegmentFlags {
     bool single: 1;
     padding: 1;
-    unsigned interp: 3;
+    Interpolation interp: 3;
     QuantizationType quanti: 3;
     padding: 24;
 };
@@ -986,7 +992,7 @@ struct CANMBone {
         if (flags & 0x2000000) padding[4];
         else if (flags & 0x8000) float pos_z;
         else RelPtr<FloatAnimationCurve> pos_z;
-    } else if (primitiveType == PrimitiveType::TransformQuaternion) {
+    } else if (primitiveType == PrimitiveType::BakedTransform) {
         if (flags & 0x10) padding[4];
         else RelPtr<QuaternionCurve> rotationOffset;
         if (flags & 0x08) padding[4];
