@@ -257,14 +257,18 @@ def gltf_get_bv_data(gltf: gltflib.GLTF, bv_id: int) -> bytes:
         buf_res = gltf.get_resource(buf.uri)
     return buf_res.data[bv.byteOffset:bv.byteOffset+bv.byteLength]
 
-def gltf_get_accessor_data_raw(gltf: gltflib.GLTF, acc: gltflib.Accessor) -> bytes:
+def gltf_get_accessor_data_vertices(gltf: gltflib.GLTF, acc: gltflib.Accessor) -> list[bytes]:
     bv = gltf.model.bufferViews[acc.bufferView]
     bv_data = gltf_get_bv_data(gltf, acc.bufferView)
     start = acc.byteOffset or 0
     component_sizes = {5120: 1, 5121: 1, 5122: 2, 5123: 2, 5125: 4, 5126: 4}
     type_sizes = {'SCALAR': 1, 'VEC2': 2, 'VEC3': 3, 'VEC4': 4, 'MAT2': 4, 'MAT3': 9, 'MAT4': 16}
-    element_size = bv.byteStride or (component_sizes[acc.componentType] * type_sizes[acc.type])
-    return bv_data[start:start+acc.count*element_size]
+    element_size = component_sizes[acc.componentType] * type_sizes[acc.type]
+    stride = bv.byteStride or element_size
+    return list(bv_data[i:i+element_size] for i in range(start, start + acc.count * stride, stride))
+
+def gltf_get_accessor_data_raw(gltf: gltflib.GLTF, acc: gltflib.Accessor) -> bytes:
+    return b''.join(gltf_get_accessor_data_vertices(gltf, acc))
 
 def gltf_get_texture(cgfx: CGFX, gltf: gltflib.GLTF, image_id: int, normal: bool = False) -> ImageTexture:
     image = gltf.model.images[image_id]
@@ -472,9 +476,14 @@ def convert_gltf(gltf: gltflib.GLTF) -> CGFX:
 
                 if base_tex:
                     tex = gltf.model.textures[base_tex.index]
-                    # sampler = gltf.model.samplers[tex.sampler] if tex.sampler is not None else default_sampler
+                    sampler = gltf.model.samplers[tex.sampler] if tex.sampler is not None else default_sampler
                     tex_info = TexInfo(ReferenceTexture(gltf_get_texture(cgfx, gltf, tex.source, False)))
-                    tex_info.sampler.min_filter = 1
+                    tex_param = 0
+                    tex_param |= 1 * (sampler.magFilter & 1)
+                    tex_param |= 2 * (sampler.minFilter & 1)
+                    tex_param |= [33071, 0, 10497, 33648].index(sampler.wrapS) << 12
+                    tex_param |= [33071, 0, 10497, 33648].index(sampler.wrapT) << 8
+                    tex_info.commands[2].head |= tex_param
                     mtob.texture_mappers[mtob.used_texture_coordinates_count] = tex_info
                     mtob.texture_coordinators[mtob.used_texture_coordinates_count].source_coordinate = base_tex.texCoord or 0
                     mtob.used_texture_coordinates_count += 1
@@ -484,11 +493,16 @@ def convert_gltf(gltf: gltflib.GLTF) -> CGFX:
                 if material.normalTexture:
                     tex = gltf.model.textures[material.normalTexture.index]
                     
-                    # sampler = gltf.model.samplers[tex.sampler] if tex.sampler is not None else default_sampler
+                    sampler = gltf.model.samplers[tex.sampler] if tex.sampler is not None else default_sampler
                     tex_info = TexInfo(ReferenceTexture(gltf_get_texture(cgfx, gltf, tex.source, True)))
-                    tex_info.sampler.min_filter = 1
                     tex_info.commands[0].head += 8 * mtob.used_texture_coordinates_count
                     tex_info.commands[1].head += 8 * mtob.used_texture_coordinates_count + 8 * bool(mtob.used_texture_coordinates_count)
+                    tex_param = 0
+                    tex_param |= 1 * (sampler.magFilter & 1)
+                    tex_param |= 2 * (sampler.minFilter & 1)
+                    tex_param |= [33071, 0, 10497, 33648].index(sampler.wrapS) << 12
+                    tex_param |= [33071, 0, 10497, 33648].index(sampler.wrapT) << 8
+                    tex_info.commands[2].head |= tex_param
                     mtob.texture_mappers[mtob.used_texture_coordinates_count] = tex_info
                     mtob.texture_coordinators[mtob.used_texture_coordinates_count].source_coordinate = material.normalTexture.texCoord or 0
                     mtob.fragment_shader.fragment_lighting.bump_texture = mtob.used_texture_coordinates_count
@@ -886,7 +900,7 @@ def write(cgfx: CGFX) -> bytes:
 
 if __name__ == '__main__':
     # cgfx = make_demo_cgfx()
-    gltf = gltflib.GLTF.load("suzanne.glb", load_file_resources=True)
+    gltf = gltflib.GLTF.load("TextureSettingsTest.glb", load_file_resources=True)
     cgfx = convert_gltf(gltf)
     with open("test.cgfx", "wb") as f:
         f.write(write(cgfx))

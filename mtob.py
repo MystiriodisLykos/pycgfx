@@ -185,7 +185,7 @@ class TexInfo(StandardObject):
         self.txob = txob
         self.sampler = TextureSampler(self)
         self.commands = [PicaCommand(0, 0x1008e), PicaCommand(0xFF000000, 0x809f0081),
-            PicaCommand(0, 0x2206), PicaCommand(0, 0),
+            PicaCommand(0, 0), PicaCommand(0, 0),
             PicaCommand(0, 0), PicaCommand(0, 0), PicaCommand(0, 0)]
     def values(self):
         return (self.type, self.dynamic_allocator, self.txob, self.sampler,
