@@ -499,11 +499,13 @@ def convert_gltf(gltf: gltflib.GLTF) -> CGFX:
         for i, p in enumerate(mesh.primitives):
             sobj_mesh = SOBJMesh(cmdl)
             cmdl.meshes.add(sobj_mesh)
+            sobj_mesh.name = (mesh.name or list(cmdl.skeleton.bones)[node_to_bone[node_id]]) + '_' + mtob.name
             sobj_mesh.mesh_node_visibility_index = 65535
             sobj_mesh.material_index = cmdl.materials.get_index(gltf.model.materials[p.material].name if p.material is not None else default_material.name)
             sobj_mesh.shape_index = len(cmdl.shapes)
             shape = SOBJShape()
             cmdl.shapes.add(shape)
+            shape.name = sobj_mesh.name
             primitive_set = PrimitiveSet()
             shape.primitive_sets.add(primitive_set)
             primitive_set.related_bones.add(node_to_bone[node_id])
