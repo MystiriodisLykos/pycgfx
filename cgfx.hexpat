@@ -2,6 +2,10 @@
 #include <std/string.pat>
 #include <std/ptr.pat>
 
+// This pattern allows for inspecting and modifying CGFX files using ImHex.
+// WARNING: Due to the large number of nested templates, evaluating this pattern uses
+// several gigabytes of memory.
+
 // https://github.com/PabloMK7/EveryFileExplorer/blob/43c08c11af58567f06a7118bb9af88ba74e810ba/3DS/NintendoWare/GFX/CMDL.cs#L763
 // https://github.com/gdkchan/Ohana3DS-Rebirth/blob/master/Ohana3DS%20Rebirth/Ohana/Models/CGFX.cs
 
@@ -675,7 +679,7 @@ struct OrientedBoundingBox {
     float centerPosition[3];
     OrientationMatrix orientationMatrix;
     float size[3];
-};
+} [[inline]];
 
 struct SOBJMesh {
     u32 type;
@@ -731,7 +735,7 @@ struct SOBJShape {
 struct MeshNodeVisibilityCtr {
     RelPtr<NullString> name;
     u32 visible;
-};
+} [[inline]];
 
 bitfield CMDLType {
     padding: 7;
@@ -808,7 +812,7 @@ struct AnimationCurve {
     RepeatMethod preRepeatMethod, postRepeatMethod;
     padding[2];
     u32 flags;
-};
+} [[inline]];
 
 enum Interpolation: u32 {
     Nearest,
@@ -904,13 +908,13 @@ struct FloatSegment {
             (QuantizationType::StepLinear32): StepLinear32Key keys[keyCount];
         }
     }
-};
+} [[inline]];
 
 struct FloatAnimationCurve {
     AnimationCurve curve;
     u32 nrSegments;
     RelPtr<FloatSegment> segments[nrSegments];
-};
+} [[inline]];
 
 struct Vec3 {
     float x, y, z;
@@ -929,7 +933,7 @@ struct Vector3Curve {
     } else {
         Vector3AndFlags values[curve.endFrame - curve.startFrame];
     }
-};
+} [[inline]];
 
 struct QuaternionAndFlags {
     float value[4];
@@ -940,7 +944,7 @@ struct QuaternionCurve {
     AnimationCurve curve;
     // TODO: what if flags & 1?
     QuaternionAndFlags values[curve.endFrame - curve.startFrame];
-};
+} [[inline]];
 
 struct CANMBone {
     u32 flags;
@@ -1101,7 +1105,7 @@ struct ViewMatrixData {
     u32 flags;
     Vec3 lookAt;
     float angle;
-};
+} [[inline]];
 
 struct ProjectionMatrixData {
     u32;
@@ -1109,7 +1113,7 @@ struct ProjectionMatrixData {
     float zfar;
     float aspect;
     float fov;
-};
+} [[inline]];
 
 struct CCAM {
     u32 type;
