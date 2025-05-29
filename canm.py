@@ -35,10 +35,14 @@ class BakedTransformFlag(IntFlag):
     ScaleIgnore = 32
 
 class RgbaColorFlags(IntFlag):
-    IgnoreRed = 16
-    IgnoreGreen = 32
-    IgnoreBlue = 64
-    IgnoreAlpha = 128
+    RConst = 0x1
+    BConst = 0x2
+    GConst = 0x4
+    AConst = 0x8
+    RIgnore = 0x10
+    GIgnore = 0x20
+    BIgnore = 0x40
+    AIgnore = 0x80
 
 class PrimitiveType(IntEnum):
     Float = 0
@@ -301,18 +305,28 @@ class CANMBoneRgbaColor(CANMBone):
     struct = Struct(CANMBone.struct.format + 'iiii')
     primitive_type = PrimitiveType.RgbaColor
     flags = RgbaColorFlags(0)
-    red: None | FloatAnimationCurve = None
-    green: None | FloatAnimationCurve = None
-    blue: None | FloatAnimationCurve = None
-    alpha: None | FloatAnimationCurve = None
+    red: None | float | FloatAnimationCurve = None
+    green: None | float | FloatAnimationCurve = None
+    blue: None | float | FloatAnimationCurve = None
+    alpha: None | float | FloatAnimationCurve = None
     def refresh_struct(self):
         flags = RgbaColorFlags(0)
+        struct = ''
         values = (self.red, self.green, self.blue, self.alpha)
-        ignore_flags = (RgbaColorFlags.IgnoreRed, RgbaColorFlags.IgnoreGreen, RgbaColorFlags.IgnoreBlue, RgbaColorFlags.IgnoreAlpha)
+        ignore_flags = (RgbaColorFlags.RIgnore, RgbaColorFlags.GIgnore, RgbaColorFlags.BIgnore, RgbaColorFlags.AIgnore)
+        const_flags = (RgbaColorFlags.RConst, RgbaColorFlags.GConst, RgbaColorFlags.BConst, RgbaColorFlags.AConst)
         for i in range(len(values)):
-            if values[i] is None:
-                flags |= ignore_flags[i]
+            if isinstance(values[i], float):
+                struct += 'f'
+                flags |= const_flags[i]
+            else:
+                struct += 'i'
+                if values[i] is None:
+                    flags |= ignore_flags[i]
+            if const_flags[i] == TransformFlag.RotZConst:
+                struct += 'xxxx'
         self.flags = flags
+        self.struct = Struct(CANMBone.struct.format + struct)
     def values(self):
         return super().values() + (self.red, self.green, self.blue, self.alpha)
 

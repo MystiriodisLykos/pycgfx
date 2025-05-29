@@ -10,7 +10,7 @@ from animation import GraphicsAnimationGroup, AnimationGroupMember, AnimationGro
 from luts import LUTS, LutTable
 from cenv import CENV, CENVLight, CENVLightSet
 from cflt import CFLT
-from canm import CANM, FloatAnimationCurve, FloatSegment,CANMBoneTransform, InterpolationType, QuantizationType, StepLinear64Key, Hermite128Key
+from canm import CANM, FloatAnimationCurve, FloatSegment,CANMBoneTransform, InterpolationType, QuantizationType, StepLinear64Key, Hermite128Key, CANMBoneRgbaColor
 import itertools
 import struct
 import swizzler
@@ -649,8 +649,7 @@ def convert_gltf(gltf: gltflib.GLTF) -> CGFX:
     cgfx.data.skeletal_animations.add(skeletal_animation.name, skeletal_animation)
     skeletal_animation.target_animation_group_name = 'SkeletalAnimation'
     for anim in gltf.model.animations or []:
-        for node_id, channels in itertools.groupby(sorted(anim.channels, key=lambda c: c.target.node), key=lambda c: c.target.node):
-            if node_id is None: continue
+        for node_id, channels in itertools.groupby(sorted((c for c in anim.channels if c.target.node is not None), key=lambda c: c.target.node), key=lambda c: c.target.node):
             bone = CANMBoneTransform()
             bone.bone_path = list(cmdl.skeleton.bones)[node_to_bone[node_id]]
             skeletal_animation.member_animations_data.add(bone.bone_path, bone)
@@ -738,6 +737,60 @@ def convert_gltf(gltf: gltflib.GLTF) -> CGFX:
                             bone.rot_x.segments[0].keys.append(StepLinear64Key(time * 60, euler.x))
                             bone.rot_y.segments[0].keys.append(StepLinear64Key(time * 60, euler.y))
                             bone.rot_z.segments[0].keys.append(StepLinear64Key(time * 60, euler.z))
+    if gltf.model.extensionsUsed and 'KHR_animation_pointer' in gltf.model.extensionsUsed:
+        material_animation = CANM()
+        material_animation.name = 'COMMON'
+        cgfx.data.material_animations.add(material_animation.name, material_animation)
+        material_animation.target_animation_group_name = 'MaterialAnimation'
+        for anim in gltf.model.animations or []:
+            for base, channels in itertools.groupby(sorted((c for c in anim.channels if c.target.path == 'pointer' and 'KHR_animation_pointer' in c.target.extensions), key=lambda c: c.target.extensions['KHR_animation_pointer']['pointer']), key=lambda c: c.target.extensions['KHR_animation_pointer']['pointer'].split('/')[:3]):
+                if base[1] != 'materials':
+                    print("WARNING: pointer animations currently only supported for materials")
+                    continue
+                material = gltf.model.materials[int(base[2])]
+                if material.name not in cmdl.materials:
+                    continue
+                for c in channels:
+                    sampler = anim.samplers[c.sampler]
+                    interpolation = InterpolationType(('STEP', 'LINEAR', 'CUBICSPLINE').index(sampler.interpolation)) if sampler.interpolation else InterpolationType.Linear
+                    inputs = tuple(struct.unpack('f', t)[0] for t in gltf_get_accessor_data_vertices(gltf, sampler.input))
+                    outputs = tuple(tuple(struct.unpack('f', bytes(c))[0] for c in itertools.batched(v, 4)) for v in gltf_get_accessor_data_vertices(gltf, sampler.output))
+
+                    bone = CANMBoneRgbaColor()
+                    path = c.target.extensions['KHR_animation_pointer']['pointer'].split('/')
+                    if path[3:] == ['pbrMetallicRoughness', 'baseColorFactor']:
+                        bone.bone_path = f'Materials["{material.name}"].MaterialColor.Diffuse'
+                    else:
+                        print("WARNING: pointer " + '/'.join(path) + " is currently not supported")
+                        continue
+                    material_animation.member_animations_data.add(bone.bone_path, bone)
+                    bone.red = FloatAnimationCurve()
+                    bone.green = FloatAnimationCurve()
+                    bone.blue = FloatAnimationCurve()
+                    bone.alpha = FloatAnimationCurve()
+                    bone.red.segments.append(FloatSegment())
+                    bone.green.segments.append(FloatSegment())
+                    bone.blue.segments.append(FloatSegment())
+                    bone.alpha.segments.append(FloatSegment())
+                    bone.red.start_frame = bone.green.start_frame = bone.blue.start_frame = bone.alpha.end_frame = bone.red.segments[0].start_frame = bone.green.segments[0].start_frame = bone.blue.segments[0].start_frame = bone.alpha.segments[0].start_frame = min(inputs) * 60
+                    bone.red.end_frame = bone.green.end_frame = bone.blue.end_frame = bone.alpha.end_frame = bone.red.segments[0].end_frame = bone.green.segments[0].end_frame = bone.blue.segments[0].end_frame = bone.alpha.segments[0].end_frame = max(inputs) * 60
+                    bone.red.segments[0].interpolation = bone.green.segments[0].interpolation = bone.blue.segments[0].interpolation = bone.alpha.segments[0].interpolation = interpolation
+                    bone.red.segments[0].quantization = bone.green.segments[0].quantization = bone.blue.segments[0].quantization = bone.alpha.segments[0].quantization = QuantizationType.StepLinear64 if interpolation != InterpolationType.CubicSpline else QuantizationType.Hermite128
+
+                    if interpolation != InterpolationType.CubicSpline:
+                        for time, (r, g, b, a) in zip(inputs, outputs):
+                            bone.red.segments[0].keys.append(StepLinear64Key(time * 60, r))
+                            bone.green.segments[0].keys.append(StepLinear64Key(time * 60, g))
+                            bone.blue.segments[0].keys.append(StepLinear64Key(time * 60, b))
+                            bone.alpha.segments[0].keys.append(StepLinear64Key(time * 60, a))
+                    else:
+                        for time, ((ra, ga, ba, aa), (rv, gv, bv, av), (rb, gb, bb, ab)) in zip(inputs, itertools.batched(outputs, 3)):
+                            bone.red.segments[0].keys.append(Hermite128Key(time * 60, rv, ra, rb))
+                            bone.green.segments[0].keys.append(Hermite128Key(time * 60, gv, ga, gb))
+                            bone.blue.segments[0].keys.append(Hermite128Key(time * 60, bv, ba, bb))
+                            bone.alpha.segments[0].keys.append(Hermite128Key(time * 60, av, aa, ab))
+                    
+
                 
 
     # optional lighting stuff
