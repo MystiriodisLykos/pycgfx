@@ -170,7 +170,7 @@ enum SkeletonScalingRule: u32 {
 
 enum BillboardMode: u32 {
     Off,
-    World = 2,
+    World,
     WorldViewpoint,
     Screen,
     ScreenViewpoint,
