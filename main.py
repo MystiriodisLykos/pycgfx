@@ -374,8 +374,6 @@ def convert_gltf(gltf: gltflib.GLTF) -> CGFX:
     cgfx.data.models.add("COMMON", cmdl)
     cmdl.name = "COMMON"
 
-    cmdl.translation = Vector3(0, -5, 0)
-
     cmdl.skeleton = SOBJSkeleton()
     node_ids = gltf.model.scenes[gltf.model.scene].nodes
     root_bone = Bone()
@@ -921,12 +919,12 @@ def main():
     parser.add_argument(
         "in_gltf",
         type=str,
-        help="The input glTF"
+        help="The input glTF (.gltf or .glb)"
     )
     parser.add_argument(
         "out_cgfx",
         type=str,
-        help="The output CGFX"
+        help="The output CGFX (.cgfx)"
     )
     args = parser.parse_args()
     
