@@ -1,4 +1,4 @@
-from shared import StandardObject, List
+from .shared import StandardObject, List
 from struct import Struct
 from enum import IntEnum, IntFlag
 

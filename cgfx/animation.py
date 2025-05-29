@@ -1,6 +1,6 @@
 from enum import IntEnum
-from shared import StandardObject, List
-from dict import DictInfo
+from .shared import StandardObject, List
+from .dict import DictInfo
 from struct import Struct
 
 class AnimationGroupMemberType(IntEnum):

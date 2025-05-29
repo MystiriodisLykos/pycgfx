@@ -1,5 +1,5 @@
-from shared import ColorFloat, InlineObject, StandardObject, Signature, Vector3, Vector4
-from dict import DictInfo
+from .shared import ColorFloat, InlineObject, StandardObject, Signature, Vector3, Vector4
+from .dict import DictInfo
 from enum import IntEnum, IntFlag
 from struct import Struct
 

@@ -2,14 +2,14 @@ from struct import Struct
 
 from enum import IntEnum, IntFlag
 
-from dict import DictInfo
-from shared import Signature, StandardObject, List, Vector3, Vector4, OrientationMatrix, Reference, Matrix
+from .dict import DictInfo
+from .shared import Signature, StandardObject, List, Vector3, Vector4, OrientationMatrix, Reference, Matrix
 
-from primitives import VertexAttribute, PrimitiveSet
+from .primitives import VertexAttribute, PrimitiveSet
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from cmdl import CMDL
+    from .cmdl import CMDL
 
 class SkeletonScalingRule(IntEnum):
     Standard = 0

@@ -1,19 +1,19 @@
-from cgfx import CGFX
-from cmdl import CMDL, CMDLWithSkeleton
-from shared import StringTable, Vector3, Vector4, Matrix
-from dict import DictInfo
-from txob import ImageTexture, PixelBasedImage, ReferenceTexture
-from sobj import SOBJMesh, SOBJShape, SOBJSkeleton, Bone, BillboardMode, BoneFlag, SkeletonFlag
-from primitives import Primitive, PrimitiveSet, InterleavedVertexStream, IndexStream, VertexStream, VertexAttributeUsage, VertexAttributeFlag, DataType, VertexParamAttribute
-from mtob import MTOB, BlendEquation, BlendFunction, ColorFloat, DepthFlag, TexInfo, PicaCommand, LinkedShader, LightingLookupTable, MTOBFlag, ConstantColorSource, BumpMode, FragmentLightingFlags
-from animation import GraphicsAnimationGroup, AnimationGroupMember, AnimationGroupMemberType
-from luts import LUTS, LutTable
-from cenv import CENV, CENVLight, CENVLightSet
-from cflt import CFLT
-from canm import CANM, FloatAnimationCurve, FloatSegment,CANMBoneTransform, InterpolationType, QuantizationType, StepLinear64Key, Hermite128Key, CANMBoneRgbaColor
+from cgfx.cgfx import CGFX
+from cgfx.cmdl import CMDL, CMDLWithSkeleton
+from cgfx.shared import StringTable, Vector3, Vector4, Matrix
+from cgfx.dict import DictInfo
+from cgfx.txob import ImageTexture, PixelBasedImage, ReferenceTexture
+from cgfx.sobj import SOBJMesh, SOBJShape, SOBJSkeleton, Bone, BillboardMode, BoneFlag, SkeletonFlag
+from cgfx.primitives import Primitive, PrimitiveSet, InterleavedVertexStream, IndexStream, VertexStream, VertexAttributeUsage, VertexAttributeFlag, DataType, VertexParamAttribute
+from cgfx.mtob import MTOB, BlendEquation, BlendFunction, ColorFloat, DepthFlag, TexInfo, PicaCommand, LinkedShader, LightingLookupTable, MTOBFlag, ConstantColorSource, BumpMode, FragmentLightingFlags
+from cgfx.animation import GraphicsAnimationGroup, AnimationGroupMember, AnimationGroupMemberType
+from cgfx.luts import LUTS, LutTable
+from cgfx.cenv import CENV, CENVLight, CENVLightSet
+from cgfx.cflt import CFLT
+from cgfx.canm import CANM, FloatAnimationCurve, FloatSegment,CANMBoneTransform, InterpolationType, QuantizationType, StepLinear64Key, Hermite128Key, CANMBoneRgbaColor
 import itertools
 import struct
-import swizzler
+import cgfx.swizzler
 from PIL import Image
 import gltflib
 from io import BytesIO

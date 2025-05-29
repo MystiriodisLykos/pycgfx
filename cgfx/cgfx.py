@@ -1,11 +1,11 @@
-from dict import DICT, DictInfo
-from shared import InlineObject, Signature
+from .dict import DICT, DictInfo
+from .shared import InlineObject, Signature
 from struct import Struct
-from cmdl import CMDL
-from txob import TXOB
-from mtob import MTOB
-from cflt import CFLT
-from canm import CANM
+from .cmdl import CMDL
+from .txob import TXOB
+from .mtob import MTOB
+from .cflt import CFLT
+from .canm import CANM
 
 
 class CGFXHeader(InlineObject):

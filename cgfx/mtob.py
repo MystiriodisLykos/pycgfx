@@ -1,7 +1,7 @@
-from shared import InlineObject, StandardObject, Signature, Matrix, Vector3, Vector4, Reference, ColorByte, ColorFloat
-from dict import DictInfo
+from .shared import InlineObject, StandardObject, Signature, Matrix, Vector3, Vector4, Reference, ColorByte, ColorFloat
+from .dict import DictInfo
 from struct import Struct
-from txob import TXOB
+from .txob import TXOB
 from enum import IntEnum, IntFlag
 import itertools
 

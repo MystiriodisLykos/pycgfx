@@ -1,5 +1,5 @@
-from shared import StandardObject, Signature, Reference
-from dict import DictInfo
+from .shared import StandardObject, Signature, Reference
+from .dict import DictInfo
 from struct import Struct
 from enum import IntEnum
 

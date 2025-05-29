@@ -1,5 +1,5 @@
-from shared import StandardObject, Signature, List
-from dict import DictInfo
+from .shared import StandardObject, Signature, List
+from .dict import DictInfo
 from struct import Struct
 
 class CENVCamera(StandardObject):

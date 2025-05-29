@@ -1,5 +1,5 @@
-from shared import StandardObject, Signature
-from dict import DictInfo
+from .shared import StandardObject, Signature
+from .dict import DictInfo
 from struct import Struct
 
 def generate_lut_commands(lut: list[float]) -> bytes:

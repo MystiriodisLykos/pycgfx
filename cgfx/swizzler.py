@@ -1,5 +1,5 @@
 from PIL.Image import Image
-from txob import PixelBasedImage, TXOB, ImageTexture, TextureFormat
+from .txob import PixelBasedImage, TXOB, ImageTexture, TextureFormat
 
 def swizzle(im: Image, format: TextureFormat) -> bytes:
     swizzle_map = [

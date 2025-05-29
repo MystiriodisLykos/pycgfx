@@ -1,6 +1,6 @@
-from shared import Vector3, Vector4, Matrix, ColorByte, ColorFloat, StandardObject, Signature
-from dict import DictInfo
-from animation import GraphicsAnimationGroup
+from .shared import Vector3, Vector4, Matrix, ColorByte, ColorFloat, StandardObject, Signature
+from .dict import DictInfo
+from .animation import GraphicsAnimationGroup
 from struct import Struct
 
 def float_to_20bit(f: float) -> int:

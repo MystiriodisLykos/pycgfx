@@ -1,7 +1,7 @@
-from shared import InlineObject, Signature, StandardObject, StringTable
+from .shared import InlineObject, Signature, StandardObject, StringTable
 from typing import TypeVar, Generic
 from struct import Struct
-import patricia
+from . import patricia
 
 T = TypeVar('T', bound=StandardObject)
 

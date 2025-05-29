@@ -1,10 +1,10 @@
-from dict import DictInfo
-from shared import Signature, StandardObject, Vector3, Vector4, Matrix, List
-from sobj import SOBJMesh, SOBJShape, SOBJSkeleton
+from .dict import DictInfo
+from .shared import Signature, StandardObject, Vector3, Vector4, Matrix, List
+from .sobj import SOBJMesh, SOBJShape, SOBJSkeleton
 from struct import Struct
-from mtob import MTOB
+from .mtob import MTOB
 from enum import IntEnum
-from animation import GraphicsAnimationGroup
+from .animation import GraphicsAnimationGroup
 
 class CMDL(StandardObject):
     struct = Struct('i4siiiiiiixxxxiifffffffff' + 'f' * 12 * 2 + 'i' * 11)
