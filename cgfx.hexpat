@@ -980,6 +980,8 @@ struct CANMBone {
         if (flags & 0x200000) padding[4];
         else if (flags & 0x800) float rot_z;
         else RelPtr<FloatAnimationCurve> rot_z;
+
+        padding[4];
         
         if (flags & 0x800000) padding[4];
         else if (flags & 0x2000) float pos_x;

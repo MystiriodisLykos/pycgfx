@@ -10,6 +10,9 @@ from animation import GraphicsAnimationGroup, AnimationGroupMember, AnimationGro
 from luts import LUTS, LutTable
 from cenv import CENV, CENVLight, CENVLightSet
 from cflt import CFLT
+from canm import CANM, FloatAnimationCurve, FloatSegment,CANMBoneTransform, InterpolationType, QuantizationType, StepLinear64Key, Hermite128Key
+import itertools
+import struct
 import swizzler
 from PIL import Image
 import gltflib
@@ -257,7 +260,9 @@ def gltf_get_bv_data(gltf: gltflib.GLTF, bv_id: int) -> bytes:
         buf_res = gltf.get_resource(buf.uri)
     return buf_res.data[bv.byteOffset:bv.byteOffset+bv.byteLength]
 
-def gltf_get_accessor_data_vertices(gltf: gltflib.GLTF, acc: gltflib.Accessor) -> list[bytes]:
+def gltf_get_accessor_data_vertices(gltf: gltflib.GLTF, acc: int | gltflib.Accessor) -> list[bytes]:
+    if isinstance(acc, int):
+        acc = gltf.model.accessors[acc]
     bv = gltf.model.bufferViews[acc.bufferView]
     bv_data = gltf_get_bv_data(gltf, acc.bufferView)
     start = acc.byteOffset or 0
@@ -367,6 +372,8 @@ def convert_gltf(gltf: gltflib.GLTF) -> CGFX:
     cmdl = CMDLWithSkeleton()
     cgfx.data.models.add("COMMON", cmdl)
     cmdl.name = "COMMON"
+
+    cmdl.translation = Vector3(0, -5, 0)
 
     cmdl.skeleton = SOBJSkeleton()
     node_ids = gltf.model.scenes[gltf.model.scene].nodes
@@ -479,10 +486,10 @@ def convert_gltf(gltf: gltflib.GLTF) -> CGFX:
                     sampler = gltf.model.samplers[tex.sampler] if tex.sampler is not None else default_sampler
                     tex_info = TexInfo(ReferenceTexture(gltf_get_texture(cgfx, gltf, tex.source, False)))
                     tex_param = 0
-                    tex_param |= 1 * (sampler.magFilter & 1)
-                    tex_param |= 2 * (sampler.minFilter & 1)
-                    tex_param |= [33071, 0, 10497, 33648].index(sampler.wrapS) << 12
-                    tex_param |= [33071, 0, 10497, 33648].index(sampler.wrapT) << 8
+                    tex_param |= 1 * ((sampler.magFilter or 9729) & 1)
+                    tex_param |= 2 * ((sampler.minFilter or 9729) & 1)
+                    tex_param |= [33071, 0, 10497, 33648].index((sampler.wrapS or 10497)) << 12
+                    tex_param |= [33071, 0, 10497, 33648].index((sampler.wrapT or 10497)) << 8
                     tex_info.commands[2].head |= tex_param
                     mtob.texture_mappers[mtob.used_texture_coordinates_count] = tex_info
                     mtob.texture_coordinators[mtob.used_texture_coordinates_count].source_coordinate = base_tex.texCoord or 0
@@ -636,6 +643,102 @@ def convert_gltf(gltf: gltflib.GLTF) -> CGFX:
     cflt = CFLT()
     cflt.name = 'TheLight'
     cgfx.data.lights.add(cflt.name, cflt)
+
+    skeletal_animation = CANM()
+    skeletal_animation.name = 'COMMON'
+    cgfx.data.skeletal_animations.add(skeletal_animation.name, skeletal_animation)
+    skeletal_animation.target_animation_group_name = 'SkeletalAnimation'
+    for anim in gltf.model.animations or []:
+        for node_id, channels in itertools.groupby(sorted(anim.channels, key=lambda c: c.target.node), key=lambda c: c.target.node):
+            if node_id is None: continue
+            bone = CANMBoneTransform()
+            bone.bone_path = list(cmdl.skeleton.bones)[node_to_bone[node_id]]
+            skeletal_animation.member_animations_data.add(bone.bone_path, bone)
+            for c in channels:
+                sampler = anim.samplers[c.sampler]
+                interpolation = InterpolationType(('STEP', 'LINEAR', 'CUBICSPLINE').index(sampler.interpolation)) if sampler.interpolation else InterpolationType.Linear
+                inputs = tuple(struct.unpack('f', t)[0] for t in gltf_get_accessor_data_vertices(gltf, sampler.input))
+                outputs = tuple(tuple(struct.unpack('f', bytes(c))[0] for c in itertools.batched(v, 4)) for v in gltf_get_accessor_data_vertices(gltf, sampler.output))
+                match c.target.path:
+                    case "weights":
+                        print("WARNING: morph target animations are not supported")
+                        continue
+                    case "translation":
+                        bone.pos_x = FloatAnimationCurve()
+                        bone.pos_y = FloatAnimationCurve()
+                        bone.pos_z = FloatAnimationCurve()
+                        bone.pos_x.segments.append(FloatSegment())
+                        bone.pos_y.segments.append(FloatSegment())
+                        bone.pos_z.segments.append(FloatSegment())
+                        bone.pos_x.start_frame = bone.pos_y.start_frame = bone.pos_z.end_frame = bone.pos_x.segments[0].start_frame = bone.pos_y.segments[0].start_frame = bone.pos_z.segments[0].start_frame = min(inputs) * 60
+                        bone.pos_x.end_frame = bone.pos_y.end_frame = bone.pos_z.end_frame = bone.pos_x.segments[0].end_frame = bone.pos_y.segments[0].end_frame = bone.pos_z.segments[0].end_frame = max(inputs) * 60
+                        bone.pos_x.segments[0].interpolation = bone.pos_y.segments[0].interpolation = bone.pos_z.segments[0].interpolation = interpolation
+                        bone.pos_x.segments[0].quantization = bone.pos_y.segments[0].quantization = bone.pos_z.segments[0].quantization = QuantizationType.StepLinear64 if interpolation != InterpolationType.CubicSpline else QuantizationType.Hermite128
+                        if interpolation != InterpolationType.CubicSpline:
+                            for time, (x, y, z) in zip(inputs, outputs):
+                                bone.pos_x.segments[0].keys.append(StepLinear64Key(time * 60, x))
+                                bone.pos_y.segments[0].keys.append(StepLinear64Key(time * 60, y))
+                                bone.pos_z.segments[0].keys.append(StepLinear64Key(time * 60, z))
+                        else:
+                            for time, ((xa, ya, za), (xv, yv, zv), (xb, yb, zb)) in zip(inputs, itertools.batched(outputs, 3)):
+                                bone.pos_x.segments[0].keys.append(Hermite128Key(time * 60, xv, xa, xb))
+                                bone.pos_y.segments[0].keys.append(Hermite128Key(time * 60, yv, ya, yb))
+                                bone.pos_z.segments[0].keys.append(Hermite128Key(time * 60, zv, za, zb))
+                    case "scale":
+                        bone.scale_x = FloatAnimationCurve()
+                        bone.scale_y = FloatAnimationCurve()
+                        bone.scale_z = FloatAnimationCurve()
+                        bone.scale_x.segments.append(FloatSegment())
+                        bone.scale_y.segments.append(FloatSegment())
+                        bone.scale_z.segments.append(FloatSegment())
+                        bone.scale_x.start_frame = bone.scale_y.start_frame = bone.scale_z.end_frame = bone.scale_x.segments[0].start_frame = bone.scale_y.segments[0].start_frame = bone.scale_z.segments[0].start_frame = min(inputs) * 60
+                        bone.scale_x.end_frame = bone.scale_y.end_frame = bone.scale_z.end_frame = bone.scale_x.segments[0].end_frame = bone.scale_y.segments[0].end_frame = bone.scale_z.segments[0].end_frame = max(inputs) * 60
+                        bone.scale_x.segments[0].interpolation = bone.scale_y.segments[0].interpolation = bone.scale_z.segments[0].interpolation = interpolation
+                        bone.scale_x.segments[0].quantization = bone.scale_y.segments[0].quantization = bone.scale_z.segments[0].quantization = QuantizationType.StepLinear64 if interpolation != InterpolationType.CubicSpline else QuantizationType.Hermite128
+                        if interpolation != InterpolationType.CubicSpline:
+                            for time, (x, y, z) in zip(inputs, outputs):
+                                bone.scale_x.segments[0].keys.append(StepLinear64Key(time * 60, x))
+                                bone.scale_y.segments[0].keys.append(StepLinear64Key(time * 60, y))
+                                bone.scale_z.segments[0].keys.append(StepLinear64Key(time * 60, z))
+                        else:
+                            for time, ((xa, ya, za), (xv, yv, zv), (xb, yb, zb)) in zip(inputs, itertools.batched(outputs, 3)):
+                                bone.scale_x.segments[0].keys.append(Hermite128Key(time * 60, xv, xa, xb))
+                                bone.scale_y.segments[0].keys.append(Hermite128Key(time * 60, yv, ya, yb))
+                                bone.scale_z.segments[0].keys.append(Hermite128Key(time * 60, zv, za, zb))
+                    case "rotation":
+                        if interpolation == InterpolationType.CubicSpline:
+                            print("WARNING: spline rotation animations are currently not supported")
+                            continue
+                        bone.rot_x = FloatAnimationCurve()
+                        bone.rot_y = FloatAnimationCurve()
+                        bone.rot_z = FloatAnimationCurve()
+                        bone.rot_x.segments.append(FloatSegment())
+                        bone.rot_y.segments.append(FloatSegment())
+                        bone.rot_z.segments.append(FloatSegment())
+                        bone.rot_x.start_frame = bone.rot_y.start_frame = bone.rot_z.end_frame = bone.rot_x.segments[0].start_frame = bone.rot_y.segments[0].start_frame = bone.rot_z.segments[0].start_frame = min(inputs) * 60
+                        bone.rot_x.end_frame = bone.rot_y.end_frame = bone.rot_z.end_frame = bone.rot_x.segments[0].end_frame = bone.rot_y.segments[0].end_frame = bone.rot_z.segments[0].end_frame = max(inputs) * 60
+                        bone.rot_x.segments[0].interpolation = bone.rot_y.segments[0].interpolation = bone.rot_z.segments[0].interpolation = interpolation
+                        bone.rot_x.segments[0].quantization = bone.rot_y.segments[0].quantization = bone.rot_z.segments[0].quantization = QuantizationType.StepLinear64 if interpolation != InterpolationType.CubicSpline else QuantizationType.Hermite128
+                        for time, (x, y, z, w) in zip(inputs, outputs):
+                            euler = quat_to_euler(x, y, z, w)
+                            # normalize rotations to smallest distance
+                            if interpolation == InterpolationType.Linear and len(bone.rot_x.segments[0].keys) > 0:
+                                while euler.x < bone.rot_x.segments[0].keys[-1].value - math.pi:
+                                    euler.x += 2 * math.pi
+                                while euler.x > bone.rot_x.segments[0].keys[-1].value + math.pi:
+                                    euler.x -= 2 * math.pi
+                                while euler.y < bone.rot_y.segments[0].keys[-1].value - math.pi:
+                                    euler.y += 2 * math.pi
+                                while euler.y > bone.rot_y.segments[0].keys[-1].value + math.pi:
+                                    euler.y -= 2 * math.pi
+                                while euler.z < bone.rot_z.segments[0].keys[-1].value - math.pi:
+                                    euler.z += 2 * math.pi
+                                while euler.z > bone.rot_z.segments[0].keys[-1].value + math.pi:
+                                    euler.z -= 2 * math.pi
+                            bone.rot_x.segments[0].keys.append(StepLinear64Key(time * 60, euler.x))
+                            bone.rot_y.segments[0].keys.append(StepLinear64Key(time * 60, euler.y))
+                            bone.rot_z.segments[0].keys.append(StepLinear64Key(time * 60, euler.z))
+                
 
     # optional lighting stuff
 
@@ -915,7 +1018,7 @@ def write(cgfx: CGFX) -> bytes:
 
 if __name__ == '__main__':
     # cgfx = make_demo_cgfx()
-    gltf = gltflib.GLTF.load("TextureSettingsTest.glb", load_file_resources=True)
+    gltf = gltflib.GLTF.load("InterpolationTest.glb", load_file_resources=True)
     cgfx = convert_gltf(gltf)
     with open("test.cgfx", "wb") as f:
         f.write(write(cgfx))
