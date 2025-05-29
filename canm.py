@@ -65,8 +65,8 @@ class AnimationCurve(StandardObject):
     struct = Struct('ffbbxxi')
     start_frame = 0.0
     end_frame = 600.0
-    pre_repeat_method = RepeatMethod.Repeat
-    post_repeat_method = RepeatMethod.Repeat
+    pre_repeat_method = RepeatMethod.Clamp
+    post_repeat_method = RepeatMethod.Clamp
     flags = 0
     def values(self) -> tuple:
         return (self.start_frame, self.end_frame,

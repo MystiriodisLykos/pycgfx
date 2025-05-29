@@ -648,6 +648,7 @@ def convert_gltf(gltf: gltflib.GLTF) -> CGFX:
     skeletal_animation.name = 'COMMON'
     cgfx.data.skeletal_animations.add(skeletal_animation.name, skeletal_animation)
     skeletal_animation.target_animation_group_name = 'SkeletalAnimation'
+    skeletal_animation.frame_size = 60 * max(struct.unpack('f', t)[0] for a in gltf.model.animations or [] for c in a.channels for t in gltf_get_accessor_data_vertices(gltf, a.samplers[c.sampler].input))
     for anim in gltf.model.animations or []:
         for node_id, channels in itertools.groupby(sorted((c for c in anim.channels if c.target.node is not None), key=lambda c: c.target.node), key=lambda c: c.target.node):
             bone = CANMBoneTransform()
@@ -742,6 +743,7 @@ def convert_gltf(gltf: gltflib.GLTF) -> CGFX:
         material_animation.name = 'COMMON'
         cgfx.data.material_animations.add(material_animation.name, material_animation)
         material_animation.target_animation_group_name = 'MaterialAnimation'
+        material_animation.frame_size = 60 * max(struct.unpack('f', t)[0] for a in gltf.model.animations or [] for c in a.channels for t in gltf_get_accessor_data_vertices(gltf, a.samplers[c.sampler].input))
         for anim in gltf.model.animations or []:
             for base, channels in itertools.groupby(sorted((c for c in anim.channels if c.target.path == 'pointer' and 'KHR_animation_pointer' in c.target.extensions), key=lambda c: c.target.extensions['KHR_animation_pointer']['pointer']), key=lambda c: c.target.extensions['KHR_animation_pointer']['pointer'].split('/')[:3]):
                 if base[1] != 'materials':
@@ -1071,7 +1073,7 @@ def write(cgfx: CGFX) -> bytes:
 
 if __name__ == '__main__':
     # cgfx = make_demo_cgfx()
-    gltf = gltflib.GLTF.load("InterpolationTest.glb", load_file_resources=True)
+    gltf = gltflib.GLTF.load("BoxAnimated.glb", load_file_resources=True)
     cgfx = convert_gltf(gltf)
     with open("test.cgfx", "wb") as f:
         f.write(write(cgfx))
