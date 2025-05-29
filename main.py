@@ -18,6 +18,7 @@ from PIL import Image
 import gltflib
 from io import BytesIO
 import math
+import argparse
 
 def quat_to_euler(x: float, y: float, z: float, w: float) -> Vector3:
     t0 = 2 * (w * x + y * z)
@@ -913,8 +914,26 @@ def write(cgfx: CGFX) -> bytes:
         print(f"WARNING: CGFX is too big ({len(data)} bytes, max is {0x80000} bytes)")
     return data
 
-if __name__ == '__main__':
-    gltf = gltflib.GLTF.load("BoxAnimated.glb", load_file_resources=True)
+def main():
+    parser = argparse.ArgumentParser(
+        description="Convert a glTF model to CGFX."
+    )
+    parser.add_argument(
+        "in_gltf",
+        type=str,
+        help="The input glTF"
+    )
+    parser.add_argument(
+        "out_cgfx",
+        type=str,
+        help="The output CGFX"
+    )
+    args = parser.parse_args()
+    
+    gltf = gltflib.GLTF.load(args.in_gltf, load_file_resources=True)
     cgfx = convert_gltf(gltf)
-    with open("test.cgfx", "wb") as f:
+    with open(args.out_cgfx, "wb") as f:
         f.write(write(cgfx))
+
+if __name__ == "__main__":
+    main()
