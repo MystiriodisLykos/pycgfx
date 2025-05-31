@@ -388,7 +388,7 @@ def gltf_get_texture(
     if normal:
         tex_name = f"NORM~{tex_name}"
     if tex_name in cgfx.data.textures:
-        return cgfx.data.textures.get(tex_name)
+        return cgfx.data.textures[tex_name]
 
     if image.uri is not None:
         image_data = gltf.get_resource(image.uri).data
@@ -538,7 +538,7 @@ def convert_gltf(gltf: gltflib.GLTF) -> CGFX:
     bone_to_node = {}
 
     for b in cmdl.skeleton.bones:
-        bone = cmdl.skeleton.bones.get(b)
+        bone = cmdl.skeleton.bones[b]
         if bone.joint_id >= 0:
             bone_to_node[cmdl.skeleton.bones.get_index(b)] = bone.joint_id
             node_to_bone[bone.joint_id] = cmdl.skeleton.bones.get_index(b)
@@ -549,18 +549,15 @@ def convert_gltf(gltf: gltflib.GLTF) -> CGFX:
     root_bone.child = initial_bones[0]
 
     for b in cmdl.skeleton.bones:
-        bone = cmdl.skeleton.bones.get(b)
+        bone = cmdl.skeleton.bones[b]
         if bone.parent:
             bone.parent_id = bone.parent.joint_id
 
     mesh_nodes = [
-        bone_to_node[cmdl.skeleton.bones.get(bone_name).joint_id]
+        bone_to_node[cmdl.skeleton.bones[bone_name].joint_id]
         for bone_name in cmdl.skeleton.bones
-        if bone_to_node[cmdl.skeleton.bones.get(bone_name).joint_id]
-        < len(gltf.model.nodes)
-        and gltf.model.nodes[
-            bone_to_node[cmdl.skeleton.bones.get(bone_name).joint_id]
-        ].mesh
+        if bone_to_node[cmdl.skeleton.bones[bone_name].joint_id] < len(gltf.model.nodes)
+        and gltf.model.nodes[bone_to_node[cmdl.skeleton.bones[bone_name].joint_id]].mesh
         is not None
     ]
 
@@ -568,7 +565,7 @@ def convert_gltf(gltf: gltflib.GLTF) -> CGFX:
         node = gltf.model.nodes[node_id]
         mesh = gltf.model.meshes[node.mesh]
         bone_id = node_to_bone[node_id]
-        bone = cmdl.skeleton.bones.get(list(cmdl.skeleton.bones)[bone_id])
+        bone = cmdl.skeleton.bones[bone_id]
 
         skin = None
         if node.skin is not None:
@@ -581,9 +578,7 @@ def convert_gltf(gltf: gltflib.GLTF) -> CGFX:
                         struct.unpack("f", bytes(s))[0]
                         for s in itertools.batched(ibms[i], 4)
                     ]
-                    sub_bone = cmdl.skeleton.bones.get(
-                        list(cmdl.skeleton.bones)[node_to_bone[joint_id]]
-                    )
+                    sub_bone = cmdl.skeleton.bones[node_to_bone[joint_id]]
                     sub_bone.flags |= BoneFlag.HasSkinningMatrix
                     sub_bone.inverse_base = Matrix(
                         Vector4(*ibm[::4]), Vector4(*ibm[1::4]), Vector4(*ibm[2::4])
@@ -766,7 +761,7 @@ def convert_gltf(gltf: gltflib.GLTF) -> CGFX:
             sobj_mesh = SOBJMesh(cmdl)
             cmdl.meshes.add(sobj_mesh)
             sobj_mesh.name = (
-                (mesh.name or list(cmdl.skeleton.bones)[node_to_bone[node_id]])
+                (mesh.name or cmdl.skeleton.bones[node_to_bone[node_id]])
                 + "_"
                 + mtob.name
             )
@@ -912,7 +907,7 @@ def convert_gltf(gltf: gltflib.GLTF) -> CGFX:
     material_animation.blend_operations.add(2)
 
     for m in cmdl.materials:
-        make_material_animation(material_animation, cmdl.materials.get(m))
+        make_material_animation(material_animation, cmdl.materials[m])
 
     cenv = CENV()
     cenv.name = "Scene"
@@ -947,7 +942,7 @@ def convert_gltf(gltf: gltflib.GLTF) -> CGFX:
                 key=lambda c: c.target.node,
             ):
                 bone = CANMBoneTransform()
-                bone.bone_path = list(cmdl.skeleton.bones)[node_to_bone[node_id]]
+                bone.bone_path = cmdl.skeleton.bones[node_to_bone[node_id]].name
                 skeletal_animation.member_animations_data.add(bone.bone_path, bone)
                 for c in channels:
                     sampler = anim.samplers[c.sampler]

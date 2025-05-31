@@ -33,7 +33,7 @@ class PatTree:
         new_node.name = name
         new_node.idx_entry = index
 
-        left = self.get(name)
+        left = self[name]
 
         bit = self.string_length * 8 - 1
         while get_bit(left.name, bit) == get_bit(name, bit):
@@ -50,7 +50,7 @@ class PatTree:
             current.left = new_node
         return new_node
 
-    def get(self, name: str) -> Node:
+    def __getitem__(self, name: str) -> Node:
         return self.get_with_parent(name)[0]
 
     def get_with_parent(self, name: str, minbit=-1) -> tuple[Node]:

@@ -47,7 +47,9 @@ class DICT(StandardObject, Generic[T]):
     def len(self):
         return len(self.nodes) - 1
 
-    def get(self, name: str) -> T:
+    def __getitem__(self, name: str) -> T:
+        if isinstance(name, int):
+            return self.nodes[name + 1].content
         # could be smarter but eh
         for n in self.nodes:
             if n.name == name:
@@ -73,7 +75,7 @@ class DICT(StandardObject, Generic[T]):
         )
         tree.root.idx_entry = -1
         for n in self.nodes:
-            p = tree.get(n.get_name())
+            p = tree[n.get_name()]
             assert p.name == n.get_name().ljust(
                 tree.string_length, "\0"
             ), f"{p.name}, {n.get_name()}"
@@ -97,8 +99,8 @@ class DictInfo(InlineObject, Generic[T]):
     def add(self, name: str, data: T):
         self.dict.add(name, data)
 
-    def get(self, name: str) -> T:
-        return self.dict.get(name)
+    def __getitem__(self, name: str) -> T:
+        return self.dict[name]
 
     def len(self) -> int:
         return self.dict.len()
