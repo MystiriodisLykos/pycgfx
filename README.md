@@ -2,11 +2,11 @@
 `pycgfx` is a tool for converting glTF models into the CGFX format supported by the Nintendo 3DS's home menu banners, as well as the Python library backing it.
 
 [Normal texture demo](https://github.com/KhronosGroup/glTF-Sample-Assets/blob/main/Models/CompareNormal/README.md)
-
+<br>
 ![The Compare Normal sample model](normal_demo.gif)
 
 [Skinned mesh animation demo](https://github.com/KhronosGroup/glTF-Sample-Assets/blob/main/Models/CesiumMan/README.md)
-
+<br>
 ![The Cesium Man sample model](cesium_demo.gif)
 
 The tool supports a number of glTF features:
