@@ -9,22 +9,30 @@ from .canm import CANM
 
 
 class CGFXHeader(InlineObject):
-    struct = Struct('4sHhiii')
+    struct = Struct("4sHhiii")
     offset = 0
-    signature = Signature('CGFX')
-    endianness = 0xfeff
+    signature = Signature("CGFX")
+    endianness = 0xFEFF
     header_size = 0x14
     version = 0x5000000
     file_size = 0
     nr_blocks = 1
 
     def values(self):
-        return (self.signature, self.endianness, self.header_size, self.version, self.file_size, self.nr_blocks)
+        return (
+            self.signature,
+            self.endianness,
+            self.header_size,
+            self.version,
+            self.file_size,
+            self.nr_blocks,
+        )
+
 
 class CGFXData(InlineObject):
-    struct = Struct('4si' + DictInfo.struct.format * 15)
+    struct = Struct("4si" + DictInfo.struct.format * 15)
     offset = CGFXHeader.offset + CGFXHeader.struct.size
-    signature = Signature('DATA')
+    signature = Signature("DATA")
     section_size = 0
     models: DictInfo[CMDL]
     textures: DictInfo[TXOB]
@@ -33,6 +41,7 @@ class CGFXData(InlineObject):
     skeletal_animations: DictInfo[CANM]
     material_animations: DictInfo[CANM]
     visibility_animations: DictInfo[CANM]
+
     def __init__(self) -> None:
         super().__init__()
         self.models = DictInfo()
@@ -50,11 +59,28 @@ class CGFXData(InlineObject):
         self.camera_animations = DictInfo()
         self.light_animations = DictInfo()
         self.emitters = DictInfo()
+
     def values(self) -> tuple:
-        return (self.signature, self.section_size, self.models, self.textures, self.lookup_tables,
-                self.materials, self.shaders, self.cameras, self.lights, self.fogs, self.scenes,
-                self.skeletal_animations, self.material_animations, self.visibility_animations,
-                self.camera_animations, self.light_animations, self.emitters)
+        return (
+            self.signature,
+            self.section_size,
+            self.models,
+            self.textures,
+            self.lookup_tables,
+            self.materials,
+            self.shaders,
+            self.cameras,
+            self.lights,
+            self.fogs,
+            self.scenes,
+            self.skeletal_animations,
+            self.material_animations,
+            self.visibility_animations,
+            self.camera_animations,
+            self.light_animations,
+            self.emitters,
+        )
+
 
 class CGFX(InlineObject):
     struct = Struct(CGFXHeader.struct.format + CGFXData.struct.format)
