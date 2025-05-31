@@ -422,7 +422,24 @@ def convert_gltf(gltf: gltflib.GLTF) -> CGFX:
             and gltf.model.nodes[bone_to_node[cmdl.skeleton.bones.get(bone_name).joint_id]].mesh is not None]
     
     for node_id in mesh_nodes:
-        mesh = gltf.model.meshes[gltf.model.nodes[node_id].mesh]
+        node = gltf.model.nodes[node_id]
+        mesh = gltf.model.meshes[node.mesh]
+        bone_id = node_to_bone[node_id]
+        bone = cmdl.skeleton.bones.get(list(cmdl.skeleton.bones)[bone_id])
+
+        skin = None
+        if node.skin is not None:
+            # bone.flags |= BoneFlag.HasSkinningMatrix
+            skin = gltf.model.skins[node.skin]
+            if skin.inverseBindMatrices is not None:
+                ibms = gltf_get_accessor_data_vertices(gltf, skin.inverseBindMatrices)
+                for i, joint_id in enumerate(skin.joints):
+                    ibm = [struct.unpack('f', bytes(s))[0] for s in itertools.batched(ibms[i], 4)]
+                    sub_bone = cmdl.skeleton.bones.get(list(cmdl.skeleton.bones)[node_to_bone[joint_id]])
+                    sub_bone.flags |= BoneFlag.HasSkinningMatrix
+                    sub_bone.inverse_base = Matrix(
+                        Vector4(*ibm[::4]), Vector4(*ibm[1::4]), Vector4(*ibm[2::4])
+                    )
         
         for material in (gltf.model.materials[p.material] if p.material is not None else default_material for p in mesh.primitives):
             if material.name not in cmdl.materials:
@@ -530,7 +547,11 @@ def convert_gltf(gltf: gltflib.GLTF) -> CGFX:
             shape.name = sobj_mesh.name
             primitive_set = PrimitiveSet()
             shape.primitive_sets.add(primitive_set)
-            primitive_set.related_bones.add(node_to_bone[node_id])
+            primitive_set.related_bones.add(bone_id)
+            if node.skin is not None:
+                primitive_set.skinning_mode = 2
+                for joint_id in skin.joints:
+                    primitive_set.related_bones.add(node_to_bone[joint_id])
             primitive = Primitive()
             primitive_set.primitives.add(primitive)
             if p.indices is not None:
@@ -565,10 +586,17 @@ def convert_gltf(gltf: gltflib.GLTF) -> CGFX:
                 shape.vertex_attributes.add(vs)
                 vs.components_count = {"SCALAR": 1, "VEC2": 2, "VEC3": 3, "VEC4": 4}[acc.type]
                 vs.format_type = acc.componentType
+                if acc.componentType == 5123: # unsigned short doesn't work
+                    vs.format_type = 5122 # turn it into signed short
                 vs.vertex_stream_data = gltf_get_accessor_data_raw(gltf, acc)
+                if ty == "JOINTS_0":
+                    vs.vertex_stream_data = b''.join(
+                        (int.from_bytes(bytes(b), 'little') + 1).to_bytes(len(b), 'little')
+                        for b in itertools.batched(vs.vertex_stream_data, {5120: 1, 5121: 1, 5122: 2, 5123: 2, 5125: 4, 5126: 4}[acc.componentType])
+                    )
                 if material.doubleSided:
                     # duplicate all vertices but with the normals reversed
-                    verts = gltf_get_accessor_data_raw(gltf, acc)
+                    verts = vs.vertex_stream_data
                     if ty != "NORMAL":
                         vs.vertex_stream_data += verts
                     else:
