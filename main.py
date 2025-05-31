@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from cgfx.cgfx import CGFX
 from cgfx.cmdl import CMDL, CMDLWithSkeleton
 from cgfx.shared import StringTable, Vector3, Vector4, Matrix
