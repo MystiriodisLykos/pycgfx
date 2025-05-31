@@ -21,6 +21,7 @@ import gltflib
 from io import BytesIO
 import math
 import argparse
+import os.path
 
 def quat_to_euler(x: float, y: float, z: float, w: float) -> Vector3:
     t0 = 2 * (w * x + y * z)
@@ -955,9 +956,13 @@ def main():
     parser.add_argument(
         "out_cgfx",
         type=str,
-        help="The output CGFX (.cgfx)"
+        help="The output CGFX (.cgfx)",
+        nargs='?',
+        default=None
     )
     args = parser.parse_args()
+    if args.out_cgfx is None:
+        args.out_cgfx = os.path.splitext(args.in_gltf)[0] + '.cgfx'
     
     gltf = gltflib.GLTF.load(args.in_gltf, load_file_resources=True)
     cgfx = convert_gltf(gltf)
