@@ -1,5 +1,5 @@
 ## pycgfx
-`pycgfx` is a tool for converting glTF models into the CGFX format supported by the Nintendo 3DS's home menu banners, as well as the Python library backing it.
+`pycgfx` is a tool for converting glTF models into the CGFX (aka BCRES) format supported by the Nintendo 3DS's home menu banners, as well as the Python library backing it.
 
 [Normal texture demo](https://github.com/KhronosGroup/glTF-Sample-Assets/blob/main/Models/CompareNormal/README.md)
 <br>
