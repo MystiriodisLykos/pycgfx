@@ -761,7 +761,7 @@ def convert_gltf(gltf: gltflib.GLTF) -> CGFX:
             sobj_mesh = SOBJMesh(cmdl)
             cmdl.meshes.add(sobj_mesh)
             sobj_mesh.name = (
-                (mesh.name or cmdl.skeleton.bones[node_to_bone[node_id]])
+                (mesh or cmdl.skeleton.bones[node_to_bone[node_id]]).name
                 + "_"
                 + mtob.name
             )
