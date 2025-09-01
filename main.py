@@ -800,10 +800,9 @@ def convert_gltf(gltf: gltflib.GLTF) -> CGFX:
                             gltf, gltf.model.accessors[acc_id]
                         )
                     )
-                    index_stream.face_data += b"".join(
-                        (int.from_bytes(b, "little") + count).to_bytes(len(b), "little")
-                        for b in rev
-                    )
+                    for b in rev:
+                        x = int.from_bytes(b, "little") + count
+                        index_stream.face_data += (x).to_bytes(int(math.log(x,2)/8+1), "little")
                 primitive.index_streams.add(index_stream)
                 primitive.buffer_objects.add(0)
             for ty, acc_id in p.attributes.__dict__.items():
