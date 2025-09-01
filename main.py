@@ -347,8 +347,8 @@ def gltf_get_bv_data(gltf: gltflib.GLTF, bv_id: int) -> bytes:
         buf_res = gltf.get_glb_resource()
     else:
         buf_res = gltf.get_resource(buf.uri)
-    return buf_res.data[bv.byteOffset : bv.byteOffset + bv.byteLength]
-
+    byteOffset = bv.byteOffset != None if bv.byteOffset else 0
+    return buf_res.data[byteOffset : byteOffset + bv.byteLength]
 
 def gltf_get_accessor_data_vertices(
     gltf: gltflib.GLTF, acc: int | gltflib.Accessor
